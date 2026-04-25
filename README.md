@@ -51,17 +51,30 @@ selections.json   ← each segment tagged keep / cut / highlight
 - **HF mirror support** — `HF_ENDPOINT=https://hf-mirror.com` is the default for China users
 - **ModelScope fallback** — when HuggingFace is unreachable, you can pre-download the Whisper model from ModelScope (Aliyun CDN, ~40 MB/s from China) and PodCut will pick up the local cache
 
+## Compatibility (read this once, save yourself an hour)
+
+**`whisperx` and `pyannote.audio` both depend on `torchcodec`, which is built against ffmpeg 4–7.**
+Installing the latest ffmpeg (8.x) silently breaks audio loading. PodCut handles this for you:
+
+| Platform | What you get | Why it works |
+|---|---|---|
+| **macOS via `setup.sh`** | `brew install ffmpeg@7` (keg-only, coexists with anything) | Pinned to 7.1.x; `start.sh` puts it first on `PATH` for our scripts only |
+| **Docker** (`Dockerfile`) | `python:3.11-slim-bookworm` + `apt install ffmpeg` (= 5.1.x) | Bookworm is locked, build aborts if a future image bump lands ffmpeg ≥ 8 |
+| **Manual install** | You're on your own — make sure `ffmpeg --version` reports 4, 5, 6, or 7 | torchcodec ABI compat |
+
+Python deps are pinned in [`requirements.txt`](requirements.txt) (torch 2.8.0 / torchcodec 0.7.0 / whisperx 3.8.5 / pyannote.audio 4.0.4). Re-running `pip install -r requirements.txt` in a fresh `python==3.11` venv reproduces a known-good environment.
+
 ## Install
 
 ### Option A — Native (recommended for Apple Silicon)
 
 ```bash
-git clone https://github.com/LauraKim/podcut.git
+git clone https://github.com/jinyang0530/podcut.git
 cd podcut
 bash scripts/setup.sh
 ```
 
-`setup.sh` installs Homebrew (if missing), `python@3.11`, `ffmpeg`, creates a venv, installs `whisperx` + `pyannote.audio`, and prompts for a free HuggingFace token. ~10 min, ~4 GB disk.
+`setup.sh` installs Homebrew (if missing), `python@3.11`, `ffmpeg@7`, creates a venv, installs the pinned `requirements.txt`, and prompts for a free HuggingFace token. ~10 min, ~4 GB disk.
 
 **Required HuggingFace gated-repo terms** — visit each link and click "Agree and access":
 - https://huggingface.co/pyannote/speaker-diarization-community-1
@@ -72,7 +85,7 @@ Then create a read token at https://huggingface.co/settings/tokens.
 ### Option B — Docker
 
 ```bash
-git clone https://github.com/LauraKim/podcut.git
+git clone https://github.com/jinyang0530/podcut.git
 cd podcut
 cp .env.example .env       # then edit .env and paste your HF_TOKEN
 docker compose up
@@ -181,15 +194,11 @@ podcut/
 │   └── extract.py         # selections.json → social.md
 ├── editor/
 │   ├── index.html         # the single-file editor (Tailwind + Alpine.js)
-│   └── logo.html          # logo mark explorations
-├── demo/
-│   ├── transcript.json    # 4-min fake podcast transcript
-│   ├── selections.example.json
-│   └── README.md
+│   ├── logo-mark.svg      # the icon (Mario ? block + scissors)
+│   └── logo.html          # logo explorations
 ├── Dockerfile
 ├── docker-compose.yml
-├── requirements.txt
-└── SKILL.md               # for use as a Claude Code skill
+└── requirements.txt
 ```
 
 ## License

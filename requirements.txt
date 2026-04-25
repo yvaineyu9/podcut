@@ -1,14 +1,44 @@
-# PodCut Python dependencies
-# Note: torch + torchaudio install large CPU wheels (~700MB).
-# faster-whisper (under whisperx) is CPU-only on macOS — no MPS/CUDA support.
+# =============================================================================
+# PodCut — pinned dependencies (out-of-the-box reproducible install)
+# =============================================================================
+#
+# These exact versions are the combination we've verified working on:
+#   - macOS arm64 (Apple Silicon) with python@3.11 + ffmpeg@7
+#   - Docker python:3.11-slim-bookworm with apt ffmpeg 5.1
+#
+# CRITICAL — ffmpeg compatibility:
+#   torchcodec 0.7.0 ships precompiled native libs (libtorchcodec_core{4,5,6,7})
+#   linked against libavutil.{56,57,58,59} → it ONLY works with ffmpeg 4–7.
+#   ffmpeg 8 (libavutil 60) silently breaks torchcodec.
+#   - Mac:    install ffmpeg@7 via Homebrew (handled by setup.sh)
+#   - Docker: bookworm's apt ffmpeg is 5.1 → fine
+#
+# Re-running `pip install -r requirements.txt` in a fresh venv on python 3.11
+# should reproduce a known-good environment.
+# =============================================================================
 
-torch>=2.2
-torchaudio>=2.2
-whisperx>=3.1.1
+# --- torch ecosystem ---------------------------------------------------------
+# torch / torchaudio / torchvision must be on the same minor version.
+# torchcodec 0.7.0 is the version paired with torch 2.8.x.
+torch==2.8.0
+torchaudio==2.8.0
+torchvision==0.23.0
+torchcodec==0.7.0
 
-# pyannote-audio is pulled in by whisperx, but pinning major version for safety
-pyannote.audio>=3.1
+# --- whisperx + its ASR backend ---------------------------------------------
+# whisperx 3.8.5 is the first version that aligns with pyannote.audio 4.x.
+whisperx==3.8.5
+faster-whisper==1.2.1
+ctranslate2==4.7.1
 
-# ModelScope for China-friendly model mirroring (used by helper scripts when HuggingFace
-# is unreachable or rate-limited; not strictly required by the runtime path).
-modelscope>=1.30
+# --- speaker diarization -----------------------------------------------------
+pyannote.audio==4.0.4
+
+# --- ML stack (transitive but pinned for reproducibility) -------------------
+transformers==4.57.6
+huggingface-hub>=0.27,<0.40
+numpy>=2.0,<3
+onnxruntime>=1.20,<2
+
+# --- China-friendly model mirror (used by helper scripts when HF is flaky) --
+modelscope==1.35.4

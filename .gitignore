@@ -22,6 +22,14 @@ Thumbs.db
 .idea/
 *.swp
 
+# Claude Code skill metadata — only used when this lives under ~/.claude/skills/.
+# Keep it out of the public repo so the project reads as a standalone tool.
+SKILL.md
+
+# Demo data — used during local development as a Claude Code skill,
+# not part of the public-facing project.
+demo/
+
 # Generated artifacts (per-run output, don't commit)
 *.transcript.json
 *.whisper-cache.json
@@ -29,11 +37,6 @@ Thumbs.db
 *.final.mp4
 *.final.mov
 *.social.md
-
-# But DO commit demo example files (they double as docs)
-!demo/transcript.json
-!demo/selections.example.json
-!demo/social.example.md
 
 # Model caches (multi-GB; users download themselves)
 .cache/

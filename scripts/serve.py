@@ -45,6 +45,37 @@ VENV_PYTHON = Path(os.environ.get("PODCUT_VENV_PYTHON") or
                    (_default_venv if _default_venv.exists() else sys.executable))
 
 
+def _ffmpeg7_bin_path() -> str | None:
+    """On macOS, locate Homebrew's ffmpeg@7 (keg-only). Returns its bin dir, or None.
+    torchcodec only supports ffmpeg 4–7; the latest `brew install ffmpeg` is 8.x and breaks it.
+    setup.sh installs ffmpeg@7 specifically; this helper makes sure subprocesses can find it
+    even if the parent shell didn't run start.sh."""
+    if sys.platform != "darwin":
+        return None
+    try:
+        out = subprocess.check_output(
+            ["brew", "--prefix", "ffmpeg@7"],
+            stderr=subprocess.DEVNULL, text=True, timeout=3,
+        ).strip()
+        bin_dir = Path(out) / "bin"
+        if (bin_dir / "ffmpeg").exists():
+            return str(bin_dir)
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        pass
+    return None
+
+
+def _augmented_env(extra: dict | None = None) -> dict:
+    """Build a subprocess env that has ffmpeg@7 first on PATH (Mac) and any extras applied."""
+    env = os.environ.copy()
+    bin7 = _ffmpeg7_bin_path()
+    if bin7 and not env.get("PATH", "").startswith(bin7):
+        env["PATH"] = f"{bin7}:{env.get('PATH', '')}"
+    if extra:
+        env.update(extra)
+    return env
+
+
 # ============================================================================
 # Session state (single active video per server)
 # ============================================================================
@@ -185,15 +216,17 @@ def run_transcribe(job: Job) -> None:
 
     # Use hf-mirror.com by default — HuggingFace is often unreachable from China.
     # Users can override by exporting HF_ENDPOINT before running start.sh.
-    env = os.environ.copy()
-    env.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
-    # Disable Xet backend (cas-bridge.xethub.hf.co, S3) which bypasses the mirror
-    # and fails frequently on networks that can't reach AWS S3 reliably.
-    env.setdefault("HF_HUB_DISABLE_XET", "1")
-    env.setdefault("HF_XET_HIGH_PERFORMANCE", "0")
-    # Also disable fast hf_transfer which sometimes hangs on flaky networks.
-    env.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
-    env.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "0")
+    # _augmented_env() also prepends ffmpeg@7's bin to PATH so the right ffmpeg is used.
+    env = _augmented_env({
+        "HF_ENDPOINT": os.environ.get("HF_ENDPOINT", "https://hf-mirror.com"),
+        # Disable Xet backend (cas-bridge.xethub.hf.co) which bypasses the mirror
+        # and fails frequently on networks that can't reach AWS S3 reliably.
+        "HF_HUB_DISABLE_XET": "1",
+        "HF_XET_HIGH_PERFORMANCE": "0",
+        # Also disable fast hf_transfer which sometimes hangs on flaky networks.
+        "HF_HUB_DISABLE_TELEMETRY": "1",
+        "HF_HUB_ENABLE_HF_TRANSFER": "0",
+    })
 
     job.log(f"$ HF_ENDPOINT={env['HF_ENDPOINT']} {' '.join(cmd)}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
@@ -252,7 +285,9 @@ def run_cut(job: Job) -> None:
         cmd += ["--fade", str(job.params["fade"])]
 
     job.log(f"$ {' '.join(cmd)}")
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1)
+    # cut.py shells out to ffmpeg, so it also needs ffmpeg@7 on PATH (Mac).
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                            text=True, bufsize=1, env=_augmented_env())
 
     # Progress from cut.py's "[ x/ N]" lines
     bar_re = re.compile(r"\[\s*(\d+)/\s*(\d+)\]")
