@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>PodCut</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      fontFamily: {
+        sans: ['-apple-system','BlinkMacSystemFont','"PingFang SC"','"Helvetica Neue"','Inter','sans-serif'],
+      },
+    }},
+  };
+</script>
+
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --panel: #121218;
+    --panel-2: #1a1a22;
+    --border: #262631;
+    --muted: #6b7280;
+    --ink: #e5e7eb;
+    --ink-bright: #f3f4f6;
+    --accent: #a78bfa;
+    --keep: #34d399;
+    --cut:  #ef4444;
+    --hi:   #f59e0b;
+  }
+  html, body { background: var(--bg); color: var(--ink); }
+  body {
+    background-image:
+      radial-gradient(1200px 600px at 10% -10%, rgba(167,139,250,.15), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(245,158,11,.10), transparent 60%);
+    background-attachment: fixed;
+  }
+  [x-cloak] { display: none !important; }
+  .panel  { background: var(--panel); border: 1px solid var(--border); }
+  .panel-2{ background: var(--panel-2); border: 1px solid var(--border); }
+
+  .seg { content-visibility: auto; contain-intrinsic-size: 72px; }
+  .seg:hover { background: rgba(255,255,255,.03); }
+  .seg.active {
+    background: linear-gradient(90deg, rgba(167,139,250,.2), rgba(167,139,250,.04));
+    border-left-color: var(--accent) !important;
+  }
+  .seg.cut .txt { text-decoration: line-through; color: #9ca3af; opacity: .55; }
+  .seg.has-hi { box-shadow: inset 3px 0 0 var(--hi); }
+  .seg.suggested .tag-btn.on { opacity: .5; }
+  .seg.suggested::after {
+    content: 'AI'; position:absolute; top:4px; right:4px;
+    font-size: 9px; font-weight:700; letter-spacing:.05em;
+    color: var(--accent); opacity:.7;
+    background: rgba(167,139,250,.12);
+    border: 1px solid rgba(167,139,250,.3);
+    padding: 1px 4px; border-radius: 3px;
+  }
+
+  .tag-btn {
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width: 34px; height: 28px; padding: 0 8px;
+    border-radius: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: .02em;
+    border: 1px solid var(--border);
+    color: var(--muted); background: transparent;
+    transition: all .12s ease;
+  }
+  .tag-btn:hover { color: var(--ink-bright); transform: translateY(-1px); }
+  .tag-btn.on.cut  { background: color-mix(in oklab, var(--cut) 22%, transparent); color: var(--cut);  border-color: color-mix(in oklab, var(--cut) 45%, transparent); }
+  .tag-btn.on.hi   { background: color-mix(in oklab, var(--hi)  22%, transparent); color: var(--hi);   border-color: color-mix(in oklab, var(--hi)  45%, transparent); }
+
+  /* ================ MARIO PIXEL TIMELINE (night theme) ================ */
+  :root {
+    --mario-sky-top:   #1a0b2e;   /* deep space purple */
+    --mario-sky-bot:   #2d1650;   /* lighter royal purple */
+    --mario-brick:     #c84b00;
+    --mario-brick-dark:#8a3300;
+    --mario-gold:      #ffd700;
+    --mario-gold-lt:   #fff4b0;
+    --mario-gold-dk:   #a57600;
+    --mario-gray:      #696969;
+  }
+  .timeline {
+    position: relative;
+    height: 82px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 2px solid #000;
+    background: linear-gradient(180deg, var(--mario-sky-top) 0%, var(--mario-sky-bot) 100%);
+    image-rendering: pixelated;
+    font-family: ui-monospace, "Courier New", monospace;
+    cursor: pointer;
+  }
+  /* Pixel stars twinkling in the night sky */
+  .timeline::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 8% 20%,  #fff 0 1px, transparent 2px),
+      radial-gradient(circle at 14% 35%, #e8d8ff 0 1px, transparent 2px),
+      radial-gradient(circle at 22% 18%, #fff 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 33% 28%, #c4b0ff 0 1px, transparent 2px),
+      radial-gradient(circle at 45% 15%, #fff 0 1px, transparent 2px),
+      radial-gradient(circle at 52% 33%, #fff4b0 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 63% 22%, #fff 0 1px, transparent 2px),
+      radial-gradient(circle at 72% 38%, #e8d8ff 0 1px, transparent 2px),
+      radial-gradient(circle at 80% 17%, #fff 0 1.5px, transparent 2.5px),
+      radial-gradient(circle at 89% 30%, #fff 0 1px, transparent 2px),
+      radial-gradient(circle at 95% 22%, #fff4b0 0 1px, transparent 2px);
+    animation: twinkle 3.5s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes twinkle {
+    0%, 100% { opacity: .75; }
+    50%      { opacity: 1; }
+  }
+  /* Brick ground at bottom */
+  .timeline::after {
+    content: '';
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 10px;
+    background:
+      repeating-linear-gradient(90deg,
+        var(--mario-brick) 0 12px,
+        var(--mario-brick-dark) 12px 14px,
+        var(--mario-brick) 14px 24px,
+        var(--mario-brick-dark) 24px 26px),
+      linear-gradient(180deg, var(--mario-brick) 0 50%, var(--mario-brick-dark) 50% 100%);
+    border-top: 2px solid #000;
+    image-rendering: pixelated;
+  }
+
+  .timeline .lane {
+    position: absolute; left: 0; right: 0;
+    height: 22px;
+  }
+  .timeline .lane.top { top: 18px; }
+  .timeline .lane.bottom { top: 42px; }
+
+  .timeline .lane-label {
+    position: absolute; left: 6px; z-index: 3;
+    font-size: 9px; font-weight: 700;
+    color: #fff;
+    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+    letter-spacing: .05em;
+    line-height: 22px;
+    pointer-events: none;
+  }
+
+  .tl-seg {
+    position: absolute;
+    top: 3px; bottom: 3px;
+    min-width: 1px;
+    border: 1px solid #000;
+    transition: filter .12s;
+  }
+  .tl-seg:hover { filter: brightness(1.2); z-index: 4; }
+
+  /* Keep — brown brick block */
+  .tl-keep {
+    background:
+      linear-gradient(180deg, #e38148 0 20%, var(--mario-brick) 20% 80%, var(--mario-brick-dark) 80% 100%),
+      repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 1px, transparent 1px 3px);
+    background-blend-mode: multiply;
+    box-shadow: inset 1px 1px 0 rgba(255,255,255,.35), inset -1px -1px 0 rgba(0,0,0,.4);
+  }
+
+  /* Cut — destroyed/gray block */
+  .tl-cut {
+    background: repeating-linear-gradient(45deg, #555 0 3px, #2c2c2c 3px 6px);
+    opacity: .55;
+    box-shadow: inset 0 0 0 1px rgba(239,68,68,.4);
+  }
+
+  /* Highlight — pulsing gold brick */
+  .tl-hi {
+    background:
+      linear-gradient(180deg, var(--mario-gold-lt) 0 25%, var(--mario-gold) 25% 80%, var(--mario-gold-dk) 80% 100%);
+    box-shadow:
+      inset 1px 1px 0 #fff,
+      inset -1px -1px 0 var(--mario-gold-dk),
+      0 0 10px rgba(255,215,0,.9);
+    animation: gold-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes gold-pulse {
+    0%, 100% { filter: brightness(1) saturate(1.1); }
+    50%      { filter: brightness(1.35) saturate(1.4); }
+  }
+
+  /* Pure-CSS gold coin (more saturated than 🪙 emoji, platform-independent) */
+  .coin {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 32% 30%, #fffbe0 0%, #ffe566 28%, #ffd700 55%, #c8941c 85%, #6b4e0a 100%);
+    border: 1.5px solid #6b4e0a;
+    box-shadow:
+      inset -1px -1px 2px rgba(0,0,0,.3),
+      inset 1px 1px 0 rgba(255,255,255,.5),
+      0 0 6px rgba(255,215,0,.6);
+    position: relative;
+    vertical-align: -2px;
+  }
+  .coin::before {
+    content: '¥';
+    position: absolute;
+    inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; font-weight: 900;
+    color: #6b4e0a;
+    text-shadow: 0 1px 0 rgba(255,255,255,.5);
+  }
+  .coin.lg { width: 18px; height: 18px; vertical-align: -3px; }
+  .coin.lg::before { font-size: 11px; }
+
+  /* Coins bouncing above highlights on the timeline */
+  .tl-coin {
+    position: absolute;
+    top: 3px;
+    transform: translateX(-50%);
+    pointer-events: none;
+    animation: coin-bounce 0.9s ease-in-out infinite;
+  }
+  @keyframes coin-bounce {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-4px); }
+  }
+
+  /* Mario mushroom playhead */
+  .tl-playhead {
+    position: absolute;
+    top: 0; bottom: 10px;
+    width: 2px;
+    background: rgba(255,255,255,.7);
+    z-index: 5; pointer-events: none;
+    transition: left .1s linear;
+  }
+  .tl-playhead::before {
+    content: '🍄';
+    position: absolute;
+    bottom: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    filter: drop-shadow(1px 1px 0 #000);
+  }
+  .tl-playhead.walking::before {
+    animation: mario-hop 0.35s ease-in-out infinite;
+  }
+  @keyframes mario-hop {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50%      { transform: translateX(-50%) translateY(-2px); }
+  }
+  .tl-playhead::after {
+    content: attr(data-time);
+    position: absolute;
+    top: 2px; left: 6px;
+    font: 700 9px/1 ui-monospace, monospace;
+    color: #fff;
+    background: rgba(0,0,0,.8);
+    border: 1px solid #fff;
+    padding: 2px 4px;
+    white-space: nowrap;
+  }
+
+  kbd {
+    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    background: #0f0f14; border: 1px solid var(--border);
+    font: 600 11px/1.3 ui-monospace, monospace; color: var(--ink);
+    box-shadow: 0 1px 0 rgba(0,0,0,.6);
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2a34; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a46; }
+
+  .fade-mask { mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 16px), transparent); }
+
+  .bar { background: linear-gradient(90deg, var(--accent), var(--hi)); }
+
+  /* Shimmer for progress */
+  @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+  .shimmer {
+    background: linear-gradient(90deg, rgba(167,139,250,.1) 0%, rgba(167,139,250,.6) 50%, rgba(167,139,250,.1) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s linear infinite;
+  }
+
+  /* big CTA button */
+  .btn-primary {
+    background: linear-gradient(135deg, #a78bfa, #f472b6);
+    color: white; font-weight: 600;
+    border: none;
+    transition: all .15s;
+    box-shadow: 0 2px 12px rgba(167,139,250,.3);
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(167,139,250,.4); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; filter: saturate(.5); }
+
+  .modal-wrap { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); display:flex; align-items:center; justify-content:center; padding: 16px; }
+
+  input[type="range"] { accent-color: var(--accent); }
+
+  /* Pill toggle */
+  .pill-toggle { position: relative; display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
+  .pill-toggle button { padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--muted); border-radius: 999px; transition: all .15s; }
+  .pill-toggle button.on { background: var(--accent); color: #000; }
+</style>
+</head>
+<body class="min-h-screen font-sans antialiased">
+
+<div x-data="editor()" x-init="init()" x-cloak class="min-h-screen">
+
+  <!-- =========================== TOP BAR =========================== -->
+  <header class="sticky top-0 z-30 backdrop-blur bg-[#0a0a0f]/80 border-b border-[var(--border)]">
+    <div class="max-w-[1800px] mx-auto px-5 py-3">
+      <div class="flex items-center gap-5 mb-3">
+        <div class="flex items-center gap-2.5">
+          <!-- Mario ? block + scissors logo -->
+          <svg width="32" height="32" viewBox="0 0 100 100" style="image-rendering:pixelated;shape-rendering:crispEdges;flex-shrink:0">
+            <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
+            <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
+            <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
+            <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
+            <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
+            <g fill="#000">
+              <rect x="22" y="22" width="6" height="6"/>
+              <rect x="72" y="22" width="6" height="6"/>
+              <rect x="22" y="72" width="6" height="6"/>
+              <rect x="72" y="72" width="6" height="6"/>
+            </g>
+            <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
+            <circle cx="42" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+            <circle cx="58" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+            <text x="50" y="62" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="28" fill="#000">?</text>
+          </svg>
+          <!-- Pixel wordmark -->
+          <div style="font-family:'Press Start 2P',monospace;font-size:16px;letter-spacing:1px;line-height:1">
+            <span style="color:#f3f4f6">POD</span><span style="color:#e12927;display:inline-block;transform:translateY(-1px);margin:0 2px">/</span><span style="color:#ffd700;text-shadow:1.5px 1.5px 0 #a57600">CUT</span>
+          </div>
+          <span class="text-xs text-gray-500 hidden md:block ml-1" x-text="serverMode ? ('· ' + (videoName || '未加载')) : '· 独立模式'"></span>
+          <span x-show="serverMode" class="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">server</span>
+        </div>
+
+        <div class="flex-1"></div>
+
+        <!-- AI suggestions toggle (prominent) -->
+        <div class="flex items-center gap-1 panel-2 rounded-lg pl-3 pr-1 py-1" :class="segments.length ? '' : 'opacity-40'">
+          <span class="text-xs">🤖 AI 建议</span>
+          <button @click="toggleAutoSuggest()" :disabled="!segments.length"
+                  class="relative w-10 h-5 rounded-full transition-colors"
+                  :class="aiAutoMode ? 'bg-violet-500' : 'bg-gray-600'"
+                  :title="aiAutoMode ? '已开启：自动标记删除和金句' : '手动模式'">
+            <span class="absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow"
+                  :style="aiAutoMode ? 'left: 22px' : 'left: 2px'"></span>
+          </button>
+          <button @click="openSuggestionModal()" :disabled="!segments.length"
+                  class="px-1.5 py-1 text-xs hover:text-white rounded"
+                  title="调整参数">⚙</button>
+        </div>
+
+        <button class="px-3 py-1.5 text-xs rounded-md panel-2 hover:border-[var(--accent)] hover:text-white"
+                @click="showShortcuts = true">快捷键 <kbd>?</kbd></button>
+        <button class="px-4 py-1.5 text-sm rounded-md btn-primary"
+                :disabled="!canExport"
+                @click="onExport()">
+          <span x-show="!serverMode">导出 selections.json</span>
+          <span x-show="serverMode">💾 导出最终视频</span>
+        </button>
+      </div>
+
+      <!-- DUAL-LANE TIMELINE -->
+      <div class="timeline" @click="seekByBar($event)" x-show="segments.length">
+        <template x-for="(sp, idx) in speakers" :key="sp">
+          <div class="lane" :class="idx === 0 ? 'top' : 'bottom'">
+            <span class="lane-label" x-text="spkName(sp)"></span>
+            <template x-for="s in segments.filter(x => x.speaker === sp)" :key="s.id">
+              <div class="tl-seg"
+                   :class="{
+                     'tl-cut': s.tags.includes('cut'),
+                     'tl-hi': s.tags.includes('highlight'),
+                     'tl-keep': !s.tags.includes('cut') && !s.tags.includes('highlight'),
+                   }"
+                   :style="`left:${(s.start / duration) * 100}%; width:${Math.max(0.08, ((s.end-s.start)/duration) * 100)}%;`"
+                   :title="`${fmtTs(s.start)} · ${spkName(s.speaker)}`"></div>
+            </template>
+          </div>
+        </template>
+        <!-- Coins bouncing above highlights -->
+        <template x-for="s in segments.filter(x => x.tags.includes('highlight'))" :key="'coin-'+s.id">
+          <div class="tl-coin" :style="`left:${((s.start + (s.end-s.start)/2) / duration) * 100}%;`"><span class="coin"></span></div>
+        </template>
+        <div class="tl-playhead" :class="{walking: playing}" :style="`left: ${(currentTime/duration)*100}%`" :data-time="fmtTs(currentTime)"></div>
+      </div>
+      <div x-show="!segments.length" class="text-center text-xs text-gray-500 py-2" x-text="serverMode ? '点击下方「开始转录」生成转录稿' : '在左侧上传转录稿开始'"></div>
+    </div>
+  </header>
+
+  <!-- =========================== BODY =========================== -->
+  <main class="max-w-[1800px] mx-auto px-5 py-5 grid grid-cols-12 gap-5">
+
+    <!-- ========== LEFT SIDEBAR ========== -->
+    <aside class="col-span-3 space-y-4">
+
+      <!-- Server status / video picker -->
+      <section class="panel rounded-xl p-4" x-show="serverMode">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-[11px] uppercase tracking-wider text-gray-500">当前视频</div>
+          <button x-show="videoPath" @click="pickVideo()" :disabled="picking"
+                  class="text-[11px] text-gray-400 hover:text-violet-400 transition">
+            <span x-show="!picking">📂 换</span>
+            <span x-show="picking">…</span>
+          </button>
+        </div>
+
+        <!-- Has video -->
+        <div x-show="videoPath" class="flex items-start gap-2">
+          <div class="text-xl">🎬</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium truncate" x-text="videoName || '未加载'"></div>
+            <div class="text-[11px] text-gray-500 truncate" x-text="videoPath || ''"></div>
+            <div class="text-[11px] text-gray-500 mt-0.5" x-text="duration ? fmtTs(duration) : ''"></div>
+          </div>
+        </div>
+
+        <!-- No video: big upload button -->
+        <div x-show="!videoPath" class="text-center py-2">
+          <button @click="pickVideo()" :disabled="picking"
+                  class="btn-primary rounded-lg px-5 py-3 text-sm w-full">
+            <span x-show="!picking">📂 选择视频文件</span>
+            <span x-show="picking">⏳ 等待选择…</span>
+          </button>
+          <div class="text-[11px] text-gray-500 mt-2 leading-relaxed">
+            支持 mp4 / mov / m4v / mkv / avi / webm<br>
+            视频留在原位置，不会被复制
+          </div>
+        </div>
+      </section>
+
+      <!-- File inputs (only in file:// mode) -->
+      <section class="panel rounded-xl p-4 space-y-3" x-show="!serverMode">
+        <div class="text-[11px] uppercase tracking-wider text-gray-500">源文件</div>
+        <label class="block">
+          <span class="text-xs text-gray-400">视频</span>
+          <input type="file" accept="video/*" @change="loadVideoLocal($event)"
+                 class="mt-1 block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-violet-600/20 file:text-violet-300 hover:file:bg-violet-600/30 cursor-pointer">
+        </label>
+        <label class="block">
+          <span class="text-xs text-gray-400">转录稿</span>
+          <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)"
+                 class="mt-1 block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-pink-600/20 file:text-pink-300 hover:file:bg-pink-600/30 cursor-pointer">
+        </label>
+      </section>
+
+      <!-- stats (always visible; empty hints when no transcript) -->
+      <section class="panel rounded-xl p-4 space-y-3">
+        <div class="text-[11px] uppercase tracking-wider text-gray-500">统计</div>
+        <div class="grid grid-cols-2 gap-2.5 text-sm">
+          <div class="panel-2 rounded-lg p-2.5">
+            <div class="text-[10px] text-gray-500">总时长</div>
+            <div class="font-mono tabular-nums text-base" x-text="segments.length ? fmtTs(stats.total) : '—'"></div>
+          </div>
+          <div class="panel-2 rounded-lg p-2.5">
+            <div class="text-[10px] text-gray-500">保留</div>
+            <div class="font-mono tabular-nums text-base text-emerald-400" x-text="segments.length ? fmtTs(stats.kept) : '—'"></div>
+          </div>
+          <div class="panel-2 rounded-lg p-2.5">
+            <div class="text-[10px] text-gray-500">删除</div>
+            <div class="font-mono tabular-nums text-base text-red-400" x-text="segments.length ? fmtTs(stats.cutTime) : '—'"></div>
+          </div>
+          <div class="panel-2 rounded-lg p-2.5">
+            <div class="text-[10px] text-gray-500">压缩率</div>
+            <div class="font-mono tabular-nums text-base" x-text="stats.total ? Math.round(100*stats.kept/stats.total) + '%' : '—'"></div>
+          </div>
+        </div>
+        <div class="panel-2 rounded-lg px-2.5 py-2 flex items-center justify-center gap-2 text-sm">
+          <span class="text-amber-400 font-semibold" x-text="stats.hi"></span>
+          <span class="coin lg"></span>
+          <span class="text-gray-500 text-xs">金句</span>
+        </div>
+      </section>
+
+      <!-- speakers -->
+      <section class="panel rounded-xl p-4 space-y-2">
+        <div class="text-[11px] uppercase tracking-wider text-gray-500">说话人（点击重命名）</div>
+        <template x-if="!speakers.length">
+          <div class="text-xs text-gray-500 py-1">加载转录稿后显示</div>
+        </template>
+        <template x-for="sp in speakers" :key="sp">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
+            <input type="text" :value="spkName(sp)"
+                   @change="renameSpeaker(sp, $event.target.value)"
+                   class="bg-transparent text-sm flex-1 rounded px-1.5 py-1 hover:bg-white/5 focus:bg-white/10 focus:outline-none">
+            <span class="text-[10px] text-gray-500 font-mono" x-text="sp"></span>
+          </div>
+        </template>
+      </section>
+
+      <!-- filter -->
+      <section class="panel rounded-xl p-4 space-y-2">
+        <div class="text-[11px] uppercase tracking-wider text-gray-500">筛选</div>
+        <div class="flex flex-wrap gap-1.5 text-xs" :class="!segments.length && 'opacity-40 pointer-events-none'">
+          <button @click="filter = 'all'" :class="filter==='all' ? 'bg-white/10 text-white' : 'text-gray-400'"
+                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">全部</button>
+          <button @click="filter = 'unmarked'" :class="filter==='unmarked' ? 'bg-white/10 text-white' : 'text-gray-400'"
+                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">未标注</button>
+          <button @click="filter = 'cut'" :class="filter==='cut' ? 'bg-red-500/20 text-red-300' : 'text-gray-400'"
+                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">💣 删除</button>
+          <button @click="filter = 'highlight'" :class="filter==='highlight' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-400'"
+                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white inline-flex items-center gap-1"><span class="coin"></span> 金句</button>
+        </div>
+        <input type="text" x-model="search" placeholder="搜索文本…"
+               :disabled="!segments.length"
+               class="w-full mt-2 panel-2 rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:border-violet-500 disabled:opacity-40">
+      </section>
+
+      <!-- suggestions status -->
+      <section class="panel rounded-xl p-4 space-y-2" x-show="hasSuggestions">
+        <div class="text-[11px] uppercase tracking-wider text-gray-500">🤖 AI 建议已应用</div>
+        <div class="text-xs text-gray-400">
+          <span x-text="suggestionStats.cut"></span> 段建议删除 ·
+          <span x-text="suggestionStats.hi"></span> 段建议金句
+        </div>
+        <div class="flex gap-2">
+          <button @click="openSuggestionModal()" class="flex-1 text-xs panel-2 rounded-md px-2 py-1.5 hover:text-white">调整参数</button>
+          <button @click="clearSuggestions()" class="flex-1 text-xs panel-2 rounded-md px-2 py-1.5 hover:text-white hover:border-red-500/50">撤销</button>
+        </div>
+      </section>
+    </aside>
+
+    <!-- ========== CENTER TRANSCRIPT ========== -->
+    <section class="col-span-6">
+
+      <!-- Empty state: big transcribe button -->
+      <div class="panel rounded-xl p-10 text-center" x-show="!segments.length && serverMode">
+        <div class="text-5xl mb-4">🎙️</div>
+        <div class="text-lg font-semibold mb-1">还没有转录稿</div>
+        <div class="text-sm text-gray-500 mb-6">点下面这个按钮，让 WhisperX 把视频变成带说话人的文字稿</div>
+        <button class="btn-primary px-6 py-3 rounded-lg text-base" @click="openTranscribeModal()">
+          ▶ 开始转录
+        </button>
+        <div class="text-xs text-gray-500 mt-4">4 小时视频大约需要 30–90 分钟</div>
+
+        <div class="mt-8 pt-6 border-t border-[var(--border)] text-xs text-gray-500">
+          <div class="mb-2">已有 transcript.json？</div>
+          <label class="inline-flex items-center gap-2 panel-2 rounded-md px-3 py-1.5 cursor-pointer hover:border-violet-500">
+            <span>📂 加载本地转录稿</span>
+            <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)" class="hidden">
+          </label>
+        </div>
+      </div>
+
+      <div class="panel rounded-xl overflow-hidden" x-show="segments.length">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+          <div class="text-sm">
+            <span class="font-semibold" x-text="segments.length"></span>
+            <span class="text-gray-500">段</span>
+            <template x-if="filteredSegments.length !== segments.length">
+              <span class="text-gray-500"> · 筛选后 <span x-text="filteredSegments.length"></span></span>
+            </template>
+          </div>
+          <div class="text-xs text-gray-500">点击段落跳转到视频时间</div>
+        </div>
+
+        <div class="h-[calc(100vh-210px)] overflow-y-auto fade-mask" id="segList">
+          <template x-for="s in filteredSegments" :key="s.id">
+            <div class="seg relative border-l-2 border-transparent pl-4 pr-3 py-3 flex gap-3 cursor-pointer"
+                 :class="{
+                   'active': s.id === activeId,
+                   'cut':   s.tags.includes('cut'),
+                   'has-hi': s.tags.includes('highlight'),
+                   'suggested': s.sourceIsAI,
+                 }"
+                 :data-id="s.id"
+                 @click="seekToSegment(s)">
+              <div class="w-20 shrink-0 text-[11px] leading-snug">
+                <div class="font-mono tabular-nums text-gray-400" x-text="fmtTs(s.start)"></div>
+                <div class="font-semibold mt-1" :style="`color:${speakerColor(s.speaker)}`" x-text="spkName(s.speaker)"></div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="txt text-[15px] leading-relaxed break-words" x-text="s.text"></div>
+              </div>
+              <div class="shrink-0 flex flex-col gap-1.5" @click.stop>
+                <button class="tag-btn cut"  :class="{on: s.tags.includes('cut')}"       @click="toggle(s,'cut')"       title="删除（X）">💣</button>
+                <button class="tag-btn hi"   :class="{on: s.tags.includes('highlight')}" @click="toggle(s,'highlight')" title="金句（H）"><span class="coin"></span></button>
+              </div>
+            </div>
+          </template>
+
+          <template x-if="segments.length && !filteredSegments.length">
+            <div class="p-12 text-center text-gray-500 text-sm">当前筛选下没有段落</div>
+          </template>
+        </div>
+      </div>
+
+      <!-- File-mode empty state -->
+      <div class="panel rounded-xl p-10 text-center" x-show="!segments.length && !serverMode">
+        <div class="text-4xl mb-3">📄</div>
+        <div class="text-sm text-gray-400">左侧选择转录稿 JSON 文件即可开始</div>
+        <div class="text-xs text-gray-500 mt-2">想要完整体验（一键转录/导出视频），请用<br><code class="text-[11px]">bash scripts/start.sh &lt;video&gt;</code> 启动</div>
+      </div>
+    </section>
+
+    <!-- ========== RIGHT VIDEO ========== -->
+    <aside class="col-span-3">
+      <div class="panel rounded-xl overflow-hidden sticky top-[150px]">
+        <div class="relative aspect-video bg-black">
+          <video x-ref="video" class="w-full h-full object-contain bg-black"
+                 controls preload="metadata"
+                 @timeupdate="onTimeUpdate"
+                 @loadedmetadata="onVideoLoaded"></video>
+          <!-- Preview mode badge -->
+          <div x-show="previewMode" class="absolute top-2 left-2 text-[10px] font-bold bg-black/70 text-amber-400 px-2 py-1 rounded border border-amber-500/40">
+            🎬 预览成片
+          </div>
+        </div>
+
+        <div class="px-4 py-3 border-t border-[var(--border)] space-y-3">
+          <!-- Preview mode toggle -->
+          <div class="flex items-center justify-between gap-2">
+            <div class="text-xs text-gray-400">播放模式</div>
+            <div class="pill-toggle">
+              <button :class="!previewMode && 'on'" @click="previewMode = false" title="播放原始视频">原片</button>
+              <button :class="previewMode && 'on'" @click="previewMode = true" title="自动跳过删除段">✂ 成片</button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 text-xs">
+            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="jumpBy(-5)" title="J">-5s</button>
+            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="togglePlay()" title="Space">
+              <span x-text="playing ? '⏸' : '▶'"></span>
+            </button>
+            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="jumpBy(5)" title="L">+5s</button>
+            <div class="flex-1"></div>
+            <select class="bg-transparent text-xs text-gray-400 focus:outline-none" x-model.number="playbackRate" @change="$refs.video.playbackRate=playbackRate">
+              <option value="0.5">0.5×</option>
+              <option value="1">1×</option>
+              <option value="1.25">1.25×</option>
+              <option value="1.5">1.5×</option>
+              <option value="2">2×</option>
+            </select>
+          </div>
+
+          <div class="text-xs text-gray-400 leading-relaxed">
+            <div class="flex justify-between">
+              <span x-text="previewMode ? '成片时间' : '原片时间'"></span>
+              <span class="font-mono tabular-nums" x-text="fmtTs(currentTime)"></span>
+            </div>
+            <div class="mt-1 font-semibold" x-show="activeSeg" :style="`color:${activeSeg ? speakerColor(activeSeg.speaker) : ''}`" x-text="activeSeg ? spkName(activeSeg.speaker) : ''"></div>
+            <div class="mt-0.5 line-clamp-3" x-text="activeSeg?.text || '—'"></div>
+          </div>
+
+          <div class="pt-2 border-t border-[var(--border)] space-y-1.5 text-[11px] text-gray-500">
+            <div><kbd>Space</kbd> 播放/暂停 · <kbd>J</kbd>/<kbd>L</kbd> ±5s · <kbd>↑</kbd><kbd>↓</kbd> 切段</div>
+            <div class="flex items-center gap-1 flex-wrap"><kbd>X</kbd> <span class="text-red-400">💣 删除</span> · <kbd>H</kbd> <span class="inline-flex items-center gap-1 text-amber-400"><span class="coin"></span> 金句</span></div>
+            <div><kbd>Z</kbd> 清空标签 · <kbd>P</kbd> 原片/成片</div>
+          </div>
+
+          <!-- Export format selector -->
+          <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between gap-2 text-xs">
+            <span class="text-gray-400">导出格式</span>
+            <div class="pill-toggle">
+              <button :class="exportFormat==='mp4' && 'on'" @click="exportFormat='mp4'" title="通用 / 小红书">MP4</button>
+              <button :class="exportFormat==='mov' && 'on'" @click="exportFormat='mov'" title="QuickTime / 剪映">MOV</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- =========================== TRANSCRIBE MODAL =========================== -->
+  <div class="modal-wrap" x-show="showTranscribeModal" x-transition.opacity
+       @click.self="showTranscribeModal = false" @keydown.escape.window="showTranscribeModal = false">
+    <div class="panel rounded-2xl p-6 w-full max-w-md">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-lg font-semibold">▶ 开始转录</div>
+        <button class="text-gray-500 hover:text-white" @click="showTranscribeModal = false">✕</button>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5">说话人数（已知的话务必填，影响准确率）</label>
+          <input type="number" min="1" max="10" x-model.number="transcribeOpts.numSpeakers"
+                 class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+          <div class="text-[11px] text-gray-500 mt-1">留空让 AI 自动猜测（不推荐，经常把沉默分成多个人）</div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5">语言</label>
+          <select x-model="transcribeOpts.language" class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+            <option value="zh">中文</option>
+            <option value="en">英文</option>
+            <option value="auto">自动识别</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs text-gray-400 mb-1.5">模型</label>
+          <select x-model="transcribeOpts.model" class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
+            <option value="large-v3">large-v3（最准，中文推荐）</option>
+            <option value="medium">medium（快 3 倍，质量尚可）</option>
+            <option value="small">small（最快，英文勉强够用）</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mt-6 flex gap-2">
+        <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="showTranscribeModal = false">取消</button>
+        <button class="flex-1 btn-primary rounded-md py-2 text-sm" @click="startTranscribe()">开始转录</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== SUGGESTION MODAL =========================== -->
+  <div class="modal-wrap" x-show="showSuggestModal" x-transition.opacity
+       @click.self="showSuggestModal = false" @keydown.escape.window="showSuggestModal = false">
+    <div class="panel rounded-2xl p-6 w-full max-w-lg">
+      <div class="flex items-center justify-between mb-1">
+        <div class="text-lg font-semibold">✨ 智能建议</div>
+        <button class="text-gray-500 hover:text-white" @click="showSuggestModal = false">✕</button>
+      </div>
+      <div class="text-xs text-gray-500 mb-5">AI 会基于长度、填充词、说话人、关键词给每段打分，帮你选出哪些该删、哪些是金句。你可以再手动微调。</div>
+
+      <div class="space-y-5 text-sm">
+        <!-- target compression -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-xs text-gray-400">目标保留时长</label>
+            <span class="text-sm font-mono tabular-nums text-white" x-text="Math.round(suggestOpts.targetRatio * 100) + '%'"></span>
+          </div>
+          <input type="range" min="0.3" max="0.95" step="0.05" x-model.number="suggestOpts.targetRatio" class="w-full">
+          <div class="flex justify-between text-[10px] text-gray-600 mt-1">
+            <span>大刀阔斧</span><span>轻度精修</span>
+          </div>
+        </div>
+
+        <!-- speaker weights -->
+        <div x-show="speakers.length">
+          <div class="text-xs text-gray-400 mb-2">说话人权重（越高越倾向保留）</div>
+          <template x-for="sp in speakers" :key="'weight-'+sp">
+            <div class="flex items-center gap-3 mb-2">
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
+              <span class="w-28 text-sm truncate" x-text="spkName(sp)"></span>
+              <input type="range" min="0" max="1.5" step="0.1"
+                     :value="suggestOpts.speakerWeights[sp] ?? 1.0"
+                     @input="suggestOpts.speakerWeights[sp] = parseFloat($event.target.value)"
+                     class="flex-1">
+              <span class="w-10 text-right font-mono tabular-nums text-sm" x-text="(suggestOpts.speakerWeights[sp] ?? 1.0).toFixed(1)"></span>
+            </div>
+          </template>
+        </div>
+
+        <!-- strip fillers -->
+        <label class="flex items-start gap-2 text-sm cursor-pointer">
+          <input type="checkbox" x-model="suggestOpts.stripFillers" class="mt-0.5 accent-violet-500">
+          <div>
+            <div>自动删除超短填充词</div>
+            <div class="text-[11px] text-gray-500">&lt;2.5 秒 且只含"嗯/啊/对/好"等字的段</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="mt-6 flex gap-2">
+        <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="showSuggestModal = false">取消</button>
+        <button class="flex-1 btn-primary rounded-md py-2 text-sm" @click="runSuggest()" :disabled="suggestBusy">
+          <span x-show="!suggestBusy">生成建议</span>
+          <span x-show="suggestBusy">⏳ 分析中…</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== JOB PROGRESS MODAL =========================== -->
+  <div class="modal-wrap" x-show="job" x-transition.opacity>
+    <div class="panel rounded-2xl p-6 w-full max-w-lg">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-lg font-semibold" x-text="job?.type === 'transcribe' ? '🎙️ 正在转录…' : '💾 正在导出视频…'"></div>
+        <span class="text-xs text-gray-500 font-mono" x-text="job && ('已用 ' + fmtElapsed(job.elapsed))"></span>
+      </div>
+
+      <!-- Progress bar -->
+      <div class="h-2 bg-[var(--panel-2)] rounded-full overflow-hidden mb-2">
+        <div class="h-full rounded-full transition-all"
+             :class="job?.status === 'error' ? 'bg-red-500' : 'shimmer'"
+             :style="`width: ${Math.max(5, (job?.progress||0) * 100)}%`"></div>
+      </div>
+      <div class="text-xs text-gray-400 mb-4" x-text="job ? Math.round((job.progress||0) * 100) + '%' : ''"></div>
+
+      <!-- Log tail -->
+      <pre class="panel-2 rounded-md p-3 text-[11px] font-mono text-gray-400 max-h-48 overflow-y-auto whitespace-pre-wrap" x-text="job?.stdout_tail || ''"></pre>
+
+      <div class="mt-4 text-xs text-gray-500" x-show="job?.type === 'transcribe'">
+        首次运行会下载 ~3GB 模型，请耐心等待。不要关闭这个窗口。
+      </div>
+      <div class="mt-4 text-xs text-red-400" x-show="job?.status === 'error'" x-text="'错误：' + (job?.error || '未知')"></div>
+
+      <div class="mt-5 flex gap-2" x-show="job?.status === 'done' || job?.status === 'error'">
+        <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="job = null">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================== SHORTCUTS MODAL =========================== -->
+  <div class="modal-wrap" x-show="showShortcuts" x-transition.opacity
+       @click.self="showShortcuts=false" @keydown.escape.window="showShortcuts=false">
+    <div class="panel rounded-2xl p-6 w-full max-w-md">
+      <div class="flex items-center justify-between mb-4">
+        <div class="text-lg font-semibold">快捷键</div>
+        <button class="text-gray-500 hover:text-white" @click="showShortcuts=false">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-y-2.5 text-sm">
+        <div class="text-gray-400">播放 / 暂停</div><div><kbd>Space</kbd></div>
+        <div class="text-gray-400">后退 / 前进 5s</div><div><kbd>J</kbd> / <kbd>L</kbd></div>
+        <div class="text-gray-400">上一段 / 下一段</div><div><kbd>↑</kbd> / <kbd>↓</kbd></div>
+        <div class="text-gray-400">跳到当前段开头</div><div><kbd>0</kbd></div>
+        <div class="text-red-400">💣 删除当前段</div><div><kbd>X</kbd></div>
+        <div class="inline-flex items-center gap-1 text-amber-400"><span class="coin"></span> 标为金句</div><div><kbd>H</kbd></div>
+        <div class="text-gray-400">清空当前段标签</div><div><kbd>Z</kbd></div>
+        <div class="text-gray-400">切换 原片 / ✂ 成片</div><div><kbd>P</kbd></div>
+      </div>
+      <div class="mt-4 pt-3 border-t border-[var(--border)] text-xs text-gray-500 leading-relaxed">
+        开启 <span class="text-violet-400">🤖 AI 建议</span> 后，加载转录稿会自动打上删除和金句标记。你可以逐个点按钮覆盖，也可以关掉开关进入纯手动模式。
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const SPEAKER_PALETTE = [
+    '#a78bfa','#f472b6','#38bdf8','#f59e0b','#34d399','#f87171','#fbbf24','#60a5fa','#c084fc','#fb7185',
+  ];
+
+  async function api(path, opts = {}) {
+    const r = await fetch(path, opts);
+    if (!r.ok && !opts.raw) throw new Error(`${path}: ${r.status}`);
+    return opts.raw ? r : r.json();
+  }
+
+  function editor() {
+    return {
+      // ============ STATE ============
+      serverMode: false,
+      videoPath: null,
+      videoName: null,
+
+      segments: [],           // [{ id, start, end, speaker, text, tags:[], sourceIsAI? }]
+      speakers: [],
+      speakerNames: {},
+      duration: 0,
+
+      currentTime: 0,
+      playing: false,
+      playbackRate: 1,
+      previewMode: false,
+
+      activeId: null,
+      filter: 'all',
+      search: '',
+
+      // modals
+      showShortcuts: false,
+      showTranscribeModal: false,
+      showSuggestModal: false,
+
+      // suggestion state
+      aiAutoMode: true,            // when ON, suggestions run automatically after transcript loads
+      hasSuggestions: false,
+      suggestionStats: { cut: 0, hi: 0 },
+      suggestOpts: { targetRatio: 0.7, stripFillers: true, speakerWeights: {} },
+      suggestBusy: false,
+
+      // transcribe
+      transcribeOpts: { numSpeakers: null, language: 'zh', model: 'large-v3' },
+
+      // export
+      exportFormat: 'mp4',         // 'mp4' or 'mov'
+
+      // video picker
+      picking: false,
+
+      // job polling
+      job: null,
+      _pollTimer: null,
+
+      // ============ INIT ============
+      async init() {
+        window.addEventListener('keydown', (e) => {
+          const t = e.target;
+          if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+          if (this.job || this.showTranscribeModal || this.showSuggestModal) return;
+          this.handleKey(e);
+        });
+
+        // Detect server mode
+        try {
+          const state = await api('/api/state');
+          this.serverMode = true;
+          this.videoPath = state.video_path;
+          this.videoName = state.video_name;
+          if (state.video_url) this.$refs.video.src = state.video_url;
+          if (state.has_transcript) {
+            await this.loadTranscriptFromUrl(state.transcript_url);
+          }
+        } catch (_) {
+          this.serverMode = false;
+        }
+      },
+
+      // ============ LOCAL (file://) file loaders ============
+      loadVideoLocal(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        const url = URL.createObjectURL(f);
+        this.$refs.video.src = url;
+        this.videoName = f.name;
+      },
+      async loadTranscriptLocal(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        await this.applyTranscript(JSON.parse(await f.text()));
+      },
+      async loadSelectionsLocal(e) {
+        const f = e.target.files?.[0];
+        if (!f) return;
+        this.applySelections(JSON.parse(await f.text()));
+      },
+
+      // ============ VIDEO PICKER (server mode) ============
+      async pickVideo() {
+        if (!this.serverMode || this.picking) return;
+        this.picking = true;
+        try {
+          const resp = await api('/api/pick-video', { method: 'POST' });
+          if (resp.cancelled) return;
+          if (resp.video_path) {
+            // Reset everything that depended on the previous video
+            this.segments = [];
+            this.speakers = [];
+            this.hasSuggestions = false;
+            this.suggestionStats = { cut: 0, hi: 0 };
+            this.activeId = null;
+            this.videoPath = resp.video_path;
+            this.videoName = resp.video_name;
+            // Bust browser video cache by adding a timestamp
+            this.$refs.video.src = '/api/video?t=' + Date.now();
+            // If a transcript sits next to the new video, auto-load
+            if (resp.has_transcript) {
+              await this.loadTranscriptFromUrl('/api/transcript?t=' + Date.now());
+            }
+          }
+        } catch (e) {
+          alert('选择视频失败: ' + e.message);
+        } finally {
+          this.picking = false;
+        }
+      },
+
+      // ============ SERVER transcript loader ============
+      async loadTranscriptFromUrl(url) {
+        const data = await api(url);
+        await this.applyTranscript(data);
+      },
+
+      async applyTranscript(data) {
+        if (!data.segments || !Array.isArray(data.segments)) {
+          alert('不是合法的 transcript.json');
+          return;
+        }
+        this.duration = data.duration || 0;
+        this.segments = data.segments.map((s, i) => ({
+          id: s.id ?? i,
+          start: +s.start,
+          end: +s.end,
+          speaker: s.speaker || 'UNKNOWN',
+          text: s.text || '',
+          tags: [],
+          sourceIsAI: false,
+        }));
+        this.speakers = Array.from(new Set(this.segments.map(s => s.speaker))).sort();
+        // Initialize speaker weights
+        this.speakers.forEach(sp => { if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0; });
+        this.tryRestore();
+        // Auto-run AI suggestions (only if server mode + toggle is on + no existing user tags)
+        const hasUserTags = this.segments.some(s => s.tags.length > 0);
+        if (this.serverMode && this.aiAutoMode && !hasUserTags) {
+          this.runSuggestSilent();
+        }
+      },
+
+      async runSuggestSilent() {
+        try {
+          const payload = {
+            speaker_weights: this.suggestOpts.speakerWeights,
+            target_ratio: this.suggestOpts.targetRatio,
+            strip_fillers: this.suggestOpts.stripFillers,
+            segments: this.segments.map(s => ({ id: s.id, start: s.start, end: s.end, speaker: s.speaker, text: s.text })),
+          };
+          const resp = await api('/api/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          const sugMap = new Map(resp.suggestions.map(s => [s.id, s.tags]));
+          this.segments = this.segments.map(s => {
+            const tags = sugMap.get(s.id);
+            if (tags) return { ...s, tags: [...tags], sourceIsAI: true };
+            return s;
+          });
+          this.hasSuggestions = true;
+          this.suggestionStats = {
+            cut: resp.meta.suggested_cuts,
+            hi: resp.meta.suggested_highlights,
+          };
+          this.persist();
+        } catch (e) {
+          console.warn('auto suggest failed:', e.message);
+        }
+      },
+
+      async toggleAutoSuggest() {
+        if (!this.segments.length) return;
+        this.aiAutoMode = !this.aiAutoMode;
+        if (this.aiAutoMode) {
+          await this.runSuggestSilent();
+        } else {
+          this.clearSuggestions();
+        }
+      },
+
+      applySelections(data) {
+        const byId = new Map(data.segments.map(s => [s.id, s.tags || []]));
+        this.segments = this.segments.map(s => ({ ...s, tags: [...(byId.get(s.id) || [])] }));
+        if (data.speaker_names) this.speakerNames = data.speaker_names;
+        this.persist();
+      },
+
+      // ============ TRANSCRIBE ============
+      openTranscribeModal() {
+        if (!this.serverMode) {
+          alert('请先用 start.sh 启动服务器模式');
+          return;
+        }
+        this.showTranscribeModal = true;
+      },
+      async startTranscribe() {
+        this.showTranscribeModal = false;
+        try {
+          const payload = {
+            type: 'transcribe',
+            params: {
+              num_speakers: this.transcribeOpts.numSpeakers || undefined,
+              language: this.transcribeOpts.language,
+              model: this.transcribeOpts.model,
+            }
+          };
+          const { job_id } = await api('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          this.pollJob(job_id, async (j) => {
+            if (j.status === 'done') {
+              const state = await api('/api/state');
+              if (state.has_transcript) await this.loadTranscriptFromUrl(state.transcript_url);
+            }
+          });
+        } catch (e) {
+          alert('启动转录失败: ' + e.message);
+        }
+      },
+
+      // ============ SUGGEST ============
+      openSuggestionModal() {
+        if (!this.segments.length) { alert('先加载转录稿'); return; }
+        if (!this.serverMode) { alert('智能建议需要服务器模式'); return; }
+        // Ensure all speakers have weights
+        this.speakers.forEach(sp => {
+          if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0;
+        });
+        this.showSuggestModal = true;
+      },
+      async runSuggest() {
+        this.suggestBusy = true;
+        try {
+          const payload = {
+            speaker_weights: this.suggestOpts.speakerWeights,
+            target_ratio: this.suggestOpts.targetRatio,
+            strip_fillers: this.suggestOpts.stripFillers,
+            segments: this.segments.map(s => ({ id: s.id, start: s.start, end: s.end, speaker: s.speaker, text: s.text })),
+          };
+          const resp = await api('/api/suggest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          // Apply: overwrite tags with suggestions, mark sourceIsAI
+          const sugMap = new Map(resp.suggestions.map(s => [s.id, s.tags]));
+          this.segments = this.segments.map(s => {
+            const tags = sugMap.get(s.id);
+            if (tags) return { ...s, tags: [...tags], sourceIsAI: true };
+            return { ...s, tags: [], sourceIsAI: false };
+          });
+          this.hasSuggestions = true;
+          this.suggestionStats = {
+            cut: resp.meta.suggested_cuts,
+            hi: resp.meta.suggested_highlights,
+          };
+          this.showSuggestModal = false;
+          this.persist();
+        } catch (e) {
+          alert('生成建议失败: ' + e.message);
+        } finally {
+          this.suggestBusy = false;
+        }
+      },
+      clearSuggestions() {
+        this.segments = this.segments.map(s => ({ ...s, tags: [], sourceIsAI: false }));
+        this.hasSuggestions = false;
+        this.suggestionStats = { cut: 0, hi: 0 };
+        this.persist();
+      },
+
+      // ============ TAGGING ============
+      toggle(seg, tag) {
+        const i = seg.tags.indexOf(tag);
+        if (i >= 0) seg.tags.splice(i, 1);
+        else seg.tags.push(tag);
+        // Once user toggles manually, the segment is no longer "just AI" — promote to confirmed
+        seg.sourceIsAI = false;
+        this.persist();
+      },
+      clearTags(seg) { seg.tags.splice(0, seg.tags.length); seg.sourceIsAI = false; this.persist(); },
+
+      // ============ VIDEO ============
+      seekTo(t) {
+        if (!this.$refs.video.src) return;
+        try { this.$refs.video.currentTime = Math.max(0, t); } catch (_) {}
+      },
+      seekToSegment(s) { this.seekTo(s.start); this.activeId = s.id; this.scrollIntoView(s.id); },
+      seekByBar(e) {
+        const r = e.currentTarget.getBoundingClientRect();
+        const ratio = (e.clientX - r.left) / r.width;
+        this.seekTo(ratio * this.duration);
+      },
+
+      onTimeUpdate() {
+        const v = this.$refs.video;
+        const t = v.currentTime;
+        this.currentTime = t;
+        this.playing = !v.paused;
+
+        // Preview mode: if inside a 'cut' segment, jump to next non-cut
+        if (this.previewMode) {
+          const here = this.segments.find(s => t >= s.start && t < s.end);
+          if (here && here.tags.includes('cut')) {
+            // find next non-cut segment
+            const next = this.segments.find(s => s.start >= here.end && !s.tags.includes('cut'));
+            if (next) {
+              this.seekTo(next.start);
+              return;
+            } else {
+              v.pause();
+              return;
+            }
+          }
+        }
+
+        // Update active segment
+        for (const s of this.segments) {
+          if (t >= s.start && t < s.end) {
+            if (this.activeId !== s.id) {
+              this.activeId = s.id;
+              this.scrollIntoView(s.id);
+            }
+            return;
+          }
+        }
+      },
+      onVideoLoaded() {
+        const d = this.$refs.video.duration;
+        if (d && (!this.duration || Math.abs(this.duration - d) > 2)) this.duration = d;
+      },
+      togglePlay() { const v = this.$refs.video; if (!v.src) return; if (v.paused) v.play(); else v.pause(); },
+      jumpBy(d) { this.seekTo(this.currentTime + d); },
+
+      scrollIntoView(id) {
+        requestAnimationFrame(() => {
+          const el = document.querySelector(`.seg[data-id="${id}"]`);
+          if (!el) return;
+          const parent = el.closest('#segList');
+          if (!parent) return;
+          const box = el.getBoundingClientRect();
+          const pBox = parent.getBoundingClientRect();
+          if (box.top < pBox.top + 20 || box.bottom > pBox.bottom - 20) {
+            el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        });
+      },
+
+      // ============ KEYBOARD ============
+      handleKey(e) {
+        if (e.key === '?') { this.showShortcuts = !this.showShortcuts; e.preventDefault(); return; }
+        if (e.key === ' ' && !e.shiftKey) { this.togglePlay(); e.preventDefault(); return; }
+        const k = e.key.toLowerCase();
+        if (k === 'j') { this.jumpBy(-5); return; }
+        if (k === 'l') { this.jumpBy(5); return; }
+        if (k === 'p') { this.previewMode = !this.previewMode; return; }
+        if (e.key === 'ArrowDown') { this.stepSeg(1); e.preventDefault(); return; }
+        if (e.key === 'ArrowUp')   { this.stepSeg(-1); e.preventDefault(); return; }
+        if (e.key === '0') {
+          const s = this.segments.find(s => s.id === this.activeId);
+          if (s) this.seekTo(s.start);
+          return;
+        }
+        const seg = this.segments.find(s => s.id === this.activeId);
+        if (!seg) return;
+        if (k === 'x') this.toggle(seg, 'cut');
+        else if (k === 'h') this.toggle(seg, 'highlight');
+        else if (k === 'z') this.clearTags(seg);
+      },
+      stepSeg(dir) {
+        const visible = this.filteredSegments;
+        if (!visible.length) return;
+        let idx = visible.findIndex(s => s.id === this.activeId);
+        if (idx < 0) idx = 0;
+        else idx = Math.max(0, Math.min(visible.length - 1, idx + dir));
+        this.seekToSegment(visible[idx]);
+      },
+
+      // ============ DERIVED ============
+      get filteredSegments() {
+        const q = this.search.trim();
+        return this.segments.filter(s => {
+          if (q && !s.text.includes(q) && !this.spkName(s.speaker).includes(q)) return false;
+          if (this.filter === 'all') return true;
+          if (this.filter === 'unmarked') return s.tags.length === 0;
+          if (this.filter === 'cut') return s.tags.includes('cut');
+          if (this.filter === 'highlight') return s.tags.includes('highlight');
+          return true;
+        });
+      },
+      get activeSeg() { return this.segments.find(s => s.id === this.activeId) || null; },
+      get stats() {
+        let total = 0, kept = 0, cutT = 0, hi = 0;
+        for (const s of this.segments) {
+          const d = s.end - s.start;
+          total += d;
+          if (s.tags.includes('cut')) cutT += d; else kept += d;
+          if (s.tags.includes('highlight')) hi++;
+        }
+        return { total, kept, cutTime: cutT, hi };
+      },
+      get canExport() {
+        if (!this.segments.length) return false;
+        if (this.serverMode && this.job) return false;
+        return true;
+      },
+
+      // ============ SPEAKERS ============
+      speakerColor(sp) {
+        const i = this.speakers.indexOf(sp);
+        return SPEAKER_PALETTE[((i < 0 ? 0 : i) % SPEAKER_PALETTE.length)];
+      },
+      spkName(sp) { return this.speakerNames[sp] || sp; },
+      renameSpeaker(sp, name) {
+        if (!name.trim()) delete this.speakerNames[sp];
+        else this.speakerNames[sp] = name.trim();
+        this.persist();
+      },
+
+      // ============ FORMATTING ============
+      fmtTs(sec) {
+        if (!isFinite(sec)) return '–';
+        sec = Math.max(0, Math.floor(sec));
+        const h = Math.floor(sec / 3600);
+        const m = Math.floor((sec % 3600) / 60);
+        const s = sec % 60;
+        return (h > 0 ? String(h).padStart(2,'0') + ':' : '') + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      },
+      fmtElapsed(sec) {
+        if (!isFinite(sec)) return '';
+        if (sec < 60) return sec + 's';
+        const m = Math.floor(sec/60), s = sec%60;
+        return `${m}m${s.toString().padStart(2,'0')}s`;
+      },
+
+      // ============ PERSISTENCE ============
+      storageKey() { return 'podcast-cutter:' + (this.videoPath || this.videoName || 'unknown'); },
+      persist() {
+        try {
+          const payload = {
+            speaker_names: this.speakerNames,
+            segments: this.segments.map(s => ({ id: s.id, tags: s.tags })),
+            has_suggestions: this.hasSuggestions,
+            suggestion_stats: this.suggestionStats,
+          };
+          localStorage.setItem(this.storageKey(), JSON.stringify(payload));
+        } catch (_) {}
+      },
+      tryRestore() {
+        try {
+          const raw = localStorage.getItem(this.storageKey());
+          if (!raw) return;
+          const d = JSON.parse(raw);
+          if (d.speaker_names) this.speakerNames = d.speaker_names;
+          if (Array.isArray(d.segments)) {
+            const byId = new Map(d.segments.map(s => [s.id, s.tags || []]));
+            this.segments = this.segments.map(s => ({ ...s, tags: [...(byId.get(s.id) || [])] }));
+          }
+          if (d.has_suggestions) {
+            this.hasSuggestions = true;
+            this.suggestionStats = d.suggestion_stats || { cut: 0, hi: 0 };
+          }
+        } catch (_) {}
+      },
+
+      // ============ EXPORT ============
+      async onExport() {
+        if (this.serverMode) {
+          await this.exportVideo();
+        } else {
+          this.exportSelectionsJson();
+        }
+      },
+
+      exportSelectionsJson() {
+        if (!this.segments.length) return;
+        const out = this.buildSelectionsPayload();
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const base = (this.videoName || 'podcast').replace(/\.[^.]+$/, '');
+        a.href = url; a.download = `${base}.selections.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      },
+
+      async exportVideo() {
+        const selections = this.buildSelectionsPayload();
+        try {
+          const { job_id } = await api('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'cut', selections, fade: 0.15, format: this.exportFormat }),
+          });
+          this.pollJob(job_id, (j) => {
+            if (j.status === 'done' && j.result?.download_url) {
+              // Trigger browser download
+              const a = document.createElement('a');
+              a.href = j.result.download_url;
+              a.download = ''; // server sends Content-Disposition
+              document.body.appendChild(a); a.click(); a.remove();
+            }
+          });
+        } catch (e) {
+          alert('导出失败: ' + e.message);
+        }
+      },
+
+      buildSelectionsPayload() {
+        return {
+          video_path: this.videoPath || this.videoName || '',
+          created_at: new Date().toISOString(),
+          speaker_names: this.speakerNames,
+          segments: this.segments.map(s => ({
+            id: s.id, start: s.start, end: s.end,
+            speaker: s.speaker, text: s.text, tags: s.tags,
+          })),
+        };
+      },
+
+      // ============ JOB POLLING ============
+      pollJob(jobId, onDone) {
+        const loop = async () => {
+          try {
+            const j = await api(`/api/jobs/${jobId}`);
+            this.job = j;
+            if (j.status === 'done' || j.status === 'error') {
+              if (onDone) await onDone(j);
+              this._pollTimer = null;
+              // keep modal open for a moment so user sees "done" state
+              return;
+            }
+          } catch (e) {
+            // network hiccup — keep trying
+          }
+          this._pollTimer = setTimeout(loop, 1000);
+        };
+        loop();
+      },
+    };
+  }
+</script>
+</body>
+</html>

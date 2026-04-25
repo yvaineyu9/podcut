@@ -1,0 +1,23 @@
+services:
+  podcut:
+    build: .
+    image: podcut:latest
+    container_name: podcut
+    ports:
+      - "8787:8787"
+    volumes:
+      # Drop your video files here. The editor will see them at /data inside the container.
+      - ./videos:/data
+      # Persist HuggingFace + ModelScope model caches across runs (saves re-downloading
+      # the multi-GB Whisper / pyannote weights every time).
+      - podcut-cache:/root/.cache
+    environment:
+      # REQUIRED — paste your token in .env (which is .gitignored).
+      - HF_TOKEN=${HF_TOKEN}
+      # Defaults to hf-mirror.com inside the Dockerfile. Override here if needed.
+      # - HF_ENDPOINT=https://huggingface.co
+    stdin_open: true
+    tty: true
+
+volumes:
+  podcut-cache:

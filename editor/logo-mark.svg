@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 100 100" style="image-rendering:pixelated;shape-rendering:crispEdges">
+  <!-- Mario ? block: gold body with darker right/bottom edges and lighter top/left edges -->
+  <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
+  <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
+  <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
+  <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
+  <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
+  <!-- Four black corner dots (classic Mario block ornament) -->
+  <g fill="#000">
+    <rect x="22" y="22" width="6" height="6"/>
+    <rect x="72" y="22" width="6" height="6"/>
+    <rect x="22" y="72" width="6" height="6"/>
+    <rect x="72" y="72" width="6" height="6"/>
+  </g>
+  <!-- Red scissors popping out the top -->
+  <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
+  <circle cx="42" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+  <circle cx="58" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+  <!-- ? mark in the block -->
+  <text x="50" y="62" text-anchor="middle" font-family="'Press Start 2P', ui-monospace, monospace" font-size="28" font-weight="700" fill="#000">?</text>
+</svg>

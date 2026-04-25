@@ -1,0 +1,14 @@
+# PodCut Python dependencies
+# Note: torch + torchaudio install large CPU wheels (~700MB).
+# faster-whisper (under whisperx) is CPU-only on macOS — no MPS/CUDA support.
+
+torch>=2.2
+torchaudio>=2.2
+whisperx>=3.1.1
+
+# pyannote-audio is pulled in by whisperx, but pinning major version for safety
+pyannote.audio>=3.1
+
+# ModelScope for China-friendly model mirroring (used by helper scripts when HuggingFace
+# is unreachable or rate-limited; not strictly required by the runtime path).
+modelscope>=1.30

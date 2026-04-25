@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8" />
+<title>PodCut · Logo v2 (Mario Pixel)</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    background: #0a0a0f;
+    color: #e5e7eb;
+    font: 14px/1.5 -apple-system, "PingFang SC", "Helvetica Neue", Inter, sans-serif;
+    min-height: 100vh;
+  }
+  body {
+    background-image:
+      radial-gradient(1200px 600px at 10% -10%, rgba(167,139,250,.1), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(245,158,11,.08), transparent 60%);
+    background-attachment: fixed;
+  }
+  .pixel { font-family: 'Press Start 2P', ui-monospace, monospace; image-rendering: pixelated; }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 40px 32px; }
+  h1 { font-weight: 800; letter-spacing: -.02em; font-size: 28px; margin: 0 0 4px; }
+  .sub { color: #9ca3af; font-size: 13px; margin-bottom: 40px; }
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .15em;
+    color: #6b7280;
+    margin: 48px 0 16px;
+    font-weight: 600;
+  }
+  .desc { color: #9ca3af; font-size: 13px; margin: 10px 0 32px; }
+
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #262631; border-radius: 16px; overflow: hidden; }
+  .pair > div { aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; padding: 32px; }
+  .pair .dark { background: #0a0a0f; }
+  .pair .light { background: #f3f4f6; }
+  .pair .sky { background: linear-gradient(180deg, #5c94fc 0%, #5c94fc 75%, #c84b00 76%, #c84b00 100%); }
+
+  .hero {
+    background: linear-gradient(135deg, rgba(167,139,250,.12), rgba(245,158,11,.08));
+    border-radius: 20px;
+    padding: 80px 40px 60px;
+    margin-bottom: 32px;
+    border: 1px solid #262631;
+    text-align: center;
+  }
+
+  /* ========================= PIXEL ART ========================= */
+  /* Pixel scissors using box-shadow trick (each "pixel" is a CSS block) */
+  .pixel-scissor {
+    display: inline-block;
+    width: 48px;
+    height: 48px;
+    position: relative;
+    image-rendering: pixelated;
+  }
+
+  /* Pixel coin — recreated via SVG for crispness at any size */
+  .svg-pixel { image-rendering: pixelated; shape-rendering: crispEdges; }
+
+  .lockup-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 24px;
+    background: #0a0a0f;
+    border: 2px solid #262631;
+    border-radius: 8px;
+  }
+
+  .pixel-wordmark {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 40px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .pixel-wordmark .pod  { color: #f3f4f6; }
+  .pixel-wordmark .cut  { color: #ffd700; text-shadow: 3px 3px 0 #a57600; }
+  .pixel-wordmark .slash { color: #e12927; display: inline-block; transform: translateY(-4px); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>🎙️ PodCut · Mario Pixel v2</h1>
+  <div class="sub">全部像素风 · 强调"剪辑"而不是"禁用" · 保持你现在 UI 里的金币延续性</div>
+
+  <!-- HERO: the preferred design -->
+  <div class="hero">
+
+    <!-- B1: Pixel film strip being snipped, gold coin in frame + pixel scissors -->
+    <svg width="280" height="120" viewBox="0 0 280 120" class="svg-pixel" style="margin-bottom:28px">
+      <!-- Film strip -->
+      <rect x="0" y="30" width="280" height="60" fill="#1f1f28" stroke="#fff" stroke-width="2"/>
+      <!-- Top sprocket holes -->
+      <g fill="#0a0a0f">
+        <rect x="8"   y="36" width="12" height="8"/>
+        <rect x="32"  y="36" width="12" height="8"/>
+        <rect x="56"  y="36" width="12" height="8"/>
+        <rect x="80"  y="36" width="12" height="8"/>
+        <rect x="192" y="36" width="12" height="8"/>
+        <rect x="216" y="36" width="12" height="8"/>
+        <rect x="240" y="36" width="12" height="8"/>
+        <rect x="264" y="36" width="12" height="8"/>
+      </g>
+      <!-- Bottom sprocket holes -->
+      <g fill="#0a0a0f">
+        <rect x="8"   y="76" width="12" height="8"/>
+        <rect x="32"  y="76" width="12" height="8"/>
+        <rect x="56"  y="76" width="12" height="8"/>
+        <rect x="80"  y="76" width="12" height="8"/>
+        <rect x="192" y="76" width="12" height="8"/>
+        <rect x="216" y="76" width="12" height="8"/>
+        <rect x="240" y="76" width="12" height="8"/>
+        <rect x="264" y="76" width="12" height="8"/>
+      </g>
+      <!-- Frame with gold coin (highlight) -->
+      <rect x="100" y="48" width="80" height="24" fill="#5c94fc" stroke="#fff" stroke-width="1"/>
+      <!-- coin -->
+      <circle cx="140" cy="60" r="8" fill="#ffd700" stroke="#a57600" stroke-width="2"/>
+      <text x="140" y="64" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="8" fill="#6b4e0a">¥</text>
+      <!-- PIXEL SCISSORS cutting into the strip from top -->
+      <g>
+        <!-- Scissor X body (top triangle) -->
+        <polygon points="130,8 145,28 155,28 170,8" fill="#e12927" stroke="#000" stroke-width="1.5"/>
+        <!-- Blade lines continuing into the strip as a cut -->
+        <line x1="140" y1="28" x2="140" y2="90" stroke="#000" stroke-width="2" stroke-dasharray="2 2"/>
+        <line x1="160" y1="28" x2="160" y2="90" stroke="#000" stroke-width="2" stroke-dasharray="2 2"/>
+        <!-- Scissor handle circles (the grips) -->
+        <circle cx="132" cy="12" r="5" fill="none" stroke="#e12927" stroke-width="2.5"/>
+        <circle cx="168" cy="12" r="5" fill="none" stroke="#e12927" stroke-width="2.5"/>
+      </g>
+    </svg>
+
+    <!-- pixel wordmark -->
+    <div class="pixel-wordmark">
+      <span class="pod">POD</span><span class="slash">/</span><span class="cut">CUT</span>
+    </div>
+    <div style="color:#9ca3af;font-size:12px;margin-top:16px;font-family:'Press Start 2P',monospace;letter-spacing:1px">&lt; B1 &middot; RECOMMENDED &gt;</div>
+  </div>
+
+
+  <!-- ========================= B1 variants ========================= -->
+  <div class="section-title">B1 · 像素胶片 + 剪刀（主打）</div>
+  <div class="pair">
+    <div class="dark">
+      <div class="lockup-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80" class="svg-pixel">
+          <!-- ? block style backdrop -->
+          <rect width="80" height="80" fill="#1f1f28" stroke="#000" stroke-width="2"/>
+          <!-- Mini film strip -->
+          <rect x="6" y="28" width="68" height="24" fill="#0a0a0f" stroke="#fff" stroke-width="1"/>
+          <g fill="#1f1f28">
+            <rect x="10" y="30" width="4" height="3"/>
+            <rect x="18" y="30" width="4" height="3"/>
+            <rect x="58" y="30" width="4" height="3"/>
+            <rect x="66" y="30" width="4" height="3"/>
+            <rect x="10" y="47" width="4" height="3"/>
+            <rect x="18" y="47" width="4" height="3"/>
+            <rect x="58" y="47" width="4" height="3"/>
+            <rect x="66" y="47" width="4" height="3"/>
+          </g>
+          <!-- coin in frame -->
+          <rect x="28" y="35" width="24" height="10" fill="#5c94fc"/>
+          <circle cx="40" cy="40" r="4" fill="#ffd700" stroke="#a57600" stroke-width="1"/>
+          <!-- pixel scissors descending -->
+          <polygon points="33,8 38,20 42,20 47,8" fill="#e12927" stroke="#000" stroke-width="1"/>
+          <circle cx="34" cy="10" r="2.5" fill="none" stroke="#e12927" stroke-width="1.5"/>
+          <circle cx="46" cy="10" r="2.5" fill="none" stroke="#e12927" stroke-width="1.5"/>
+          <!-- cut line through strip -->
+          <rect x="38" y="20" width="1.5" height="38" fill="#fff" opacity=".6"/>
+          <rect x="42" y="20" width="1.5" height="38" fill="#fff" opacity=".6"/>
+        </svg>
+        <div class="pixel-wordmark" style="font-size:28px"><span class="pod">POD</span><span class="slash" style="font-size:28px;transform:translateY(-3px)">/</span><span class="cut">CUT</span></div>
+      </div>
+    </div>
+    <div class="light">
+      <div class="lockup-wrap" style="background:#fff;border-color:#d4d4d8">
+        <svg width="80" height="80" viewBox="0 0 80 80" class="svg-pixel">
+          <rect width="80" height="80" fill="#e5e7eb" stroke="#000" stroke-width="2"/>
+          <rect x="6" y="28" width="68" height="24" fill="#0a0a0f" stroke="#000" stroke-width="1"/>
+          <g fill="#e5e7eb">
+            <rect x="10" y="30" width="4" height="3"/><rect x="18" y="30" width="4" height="3"/>
+            <rect x="58" y="30" width="4" height="3"/><rect x="66" y="30" width="4" height="3"/>
+            <rect x="10" y="47" width="4" height="3"/><rect x="18" y="47" width="4" height="3"/>
+            <rect x="58" y="47" width="4" height="3"/><rect x="66" y="47" width="4" height="3"/>
+          </g>
+          <rect x="28" y="35" width="24" height="10" fill="#5c94fc"/>
+          <circle cx="40" cy="40" r="4" fill="#ffd700" stroke="#a57600" stroke-width="1"/>
+          <polygon points="33,8 38,20 42,20 47,8" fill="#e12927" stroke="#000" stroke-width="1"/>
+          <circle cx="34" cy="10" r="2.5" fill="none" stroke="#e12927" stroke-width="1.5"/>
+          <circle cx="46" cy="10" r="2.5" fill="none" stroke="#e12927" stroke-width="1.5"/>
+          <rect x="38" y="20" width="1.5" height="38" fill="#0a0a0f" opacity=".3"/>
+          <rect x="42" y="20" width="1.5" height="38" fill="#0a0a0f" opacity=".3"/>
+        </svg>
+        <div class="pixel-wordmark" style="font-size:28px"><span style="color:#0a0a0f">POD</span><span style="color:#e12927;font-size:28px;display:inline-block;transform:translateY(-3px)">/</span><span style="color:#c8a000;text-shadow:2px 2px 0 #6b4e0a">CUT</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="desc">像素胶片 · 画面里有一枚 Mario 金币（= 金句）· 剪刀从上方降下来把它切成"保留段" · 直接传达"挑金句 + 剪"</div>
+
+
+  <!-- ========================= B2 · 纯像素 wordmark ========================= -->
+  <div class="section-title">B2 · 纯像素字（最简）</div>
+  <div class="pair">
+    <div class="dark">
+      <div class="pixel-wordmark" style="font-size:56px">
+        <span class="pod">POD</span><span class="slash" style="font-size:56px;transform:translateY(-5px)">/</span><span class="cut">CUT</span>
+      </div>
+    </div>
+    <div class="sky" style="display:flex;flex-direction:column;justify-content:center;align-items:center">
+      <div class="pixel-wordmark" style="font-size:56px">
+        <span style="color:#fff;text-shadow:3px 3px 0 #000">POD</span><span style="color:#fff;font-size:56px;display:inline-block;transform:translateY(-5px);text-shadow:3px 3px 0 #000">/</span><span style="color:#ffd700;text-shadow:3px 3px 0 #000">CUT</span>
+      </div>
+    </div>
+  </div>
+  <div class="desc">Press Start 2P 8-bit 字体 · POD 白 + 红色斜杠 + CUT 金色带阴影 · 适合 header / 标题 / 印 T 恤</div>
+
+
+  <!-- ========================= B3 · ? block ========================= -->
+  <div class="section-title">B3 · 马里奥 ? 砖块里蹦出剪刀</div>
+  <div class="pair">
+    <div class="dark">
+      <div style="display:inline-flex;align-items:center;gap:20px">
+        <svg width="100" height="100" viewBox="0 0 100 100" class="svg-pixel">
+          <!-- ? block classic Mario style -->
+          <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
+          <!-- inset shadow top-left light, bottom-right dark -->
+          <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
+          <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
+          <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
+          <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
+          <!-- dotted corners classic Mario -->
+          <g fill="#000">
+            <rect x="22" y="22" width="6" height="6"/>
+            <rect x="72" y="22" width="6" height="6"/>
+            <rect x="22" y="72" width="6" height="6"/>
+            <rect x="72" y="72" width="6" height="6"/>
+          </g>
+          <!-- scissors popping out of top (instead of coin) -->
+          <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
+          <circle cx="42" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+          <circle cx="58" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+          <!-- ? -->
+          <text x="50" y="62" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="28" fill="#000">?</text>
+        </svg>
+        <div class="pixel-wordmark" style="font-size:30px"><span class="pod">POD</span><span class="slash" style="font-size:30px;transform:translateY(-3px)">/</span><span class="cut">CUT</span></div>
+      </div>
+    </div>
+    <div class="sky">
+      <div style="display:inline-flex;align-items:center;gap:20px">
+        <svg width="100" height="100" viewBox="0 0 100 100" class="svg-pixel">
+          <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
+          <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
+          <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
+          <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
+          <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
+          <g fill="#000">
+            <rect x="22" y="22" width="6" height="6"/>
+            <rect x="72" y="22" width="6" height="6"/>
+            <rect x="22" y="72" width="6" height="6"/>
+            <rect x="72" y="72" width="6" height="6"/>
+          </g>
+          <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
+          <circle cx="42" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+          <circle cx="58" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
+          <text x="50" y="62" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="28" fill="#000">?</text>
+        </svg>
+        <div class="pixel-wordmark" style="font-size:30px"><span style="color:#fff;text-shadow:2px 2px 0 #000">POD</span><span style="color:#fff;font-size:30px;display:inline-block;transform:translateY(-3px);text-shadow:2px 2px 0 #000">/</span><span style="color:#ffd700;text-shadow:2px 2px 0 #000">CUT</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="desc">经典 Mario ? 砖块 · 顶上不是蹦金币、而是蹦出剪刀 · 最马里奥味</div>
+
+
+  <!-- ========================= B4 · 像素剪刀 only ========================= -->
+  <div class="section-title">B4 · 纯像素剪刀图标（最小 app icon）</div>
+  <div class="pair">
+    <div class="dark">
+      <svg width="80" height="80" viewBox="0 0 16 16" class="svg-pixel">
+        <!-- A chunky 16x16 pixel scissor sprite -->
+        <rect width="16" height="16" fill="none"/>
+        <!-- Left handle (red) -->
+        <g fill="#e12927">
+          <rect x="2" y="2" width="2" height="2"/>
+          <rect x="3" y="3" width="2" height="2"/>
+          <rect x="4" y="4" width="2" height="2"/>
+          <rect x="5" y="5" width="2" height="2"/>
+          <rect x="6" y="6" width="2" height="2"/>
+          <!-- grip ring -->
+          <rect x="2" y="10" width="4" height="2"/>
+          <rect x="1" y="11" width="2" height="3"/>
+          <rect x="5" y="11" width="2" height="3"/>
+          <rect x="2" y="13" width="4" height="2"/>
+        </g>
+        <!-- Right handle (pink) -->
+        <g fill="#ec4899">
+          <rect x="12" y="2" width="2" height="2"/>
+          <rect x="11" y="3" width="2" height="2"/>
+          <rect x="10" y="4" width="2" height="2"/>
+          <rect x="9" y="5" width="2" height="2"/>
+          <rect x="8" y="6" width="2" height="2"/>
+          <rect x="10" y="10" width="4" height="2"/>
+          <rect x="9"  y="11" width="2" height="3"/>
+          <rect x="13" y="11" width="2" height="3"/>
+          <rect x="10" y="13" width="4" height="2"/>
+        </g>
+        <!-- Gold coin pivot -->
+        <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+      </svg>
+    </div>
+    <div class="light">
+      <svg width="80" height="80" viewBox="0 0 16 16" class="svg-pixel">
+        <rect width="16" height="16" fill="#fff" stroke="#e5e7eb" stroke-width=".5"/>
+        <g fill="#e12927">
+          <rect x="2" y="2" width="2" height="2"/>
+          <rect x="3" y="3" width="2" height="2"/>
+          <rect x="4" y="4" width="2" height="2"/>
+          <rect x="5" y="5" width="2" height="2"/>
+          <rect x="6" y="6" width="2" height="2"/>
+          <rect x="2" y="10" width="4" height="2"/>
+          <rect x="1" y="11" width="2" height="3"/>
+          <rect x="5" y="11" width="2" height="3"/>
+          <rect x="2" y="13" width="4" height="2"/>
+        </g>
+        <g fill="#ec4899">
+          <rect x="12" y="2" width="2" height="2"/>
+          <rect x="11" y="3" width="2" height="2"/>
+          <rect x="10" y="4" width="2" height="2"/>
+          <rect x="9" y="5" width="2" height="2"/>
+          <rect x="8" y="6" width="2" height="2"/>
+          <rect x="10" y="10" width="4" height="2"/>
+          <rect x="9"  y="11" width="2" height="3"/>
+          <rect x="13" y="11" width="2" height="3"/>
+          <rect x="10" y="13" width="4" height="2"/>
+        </g>
+        <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+      </svg>
+    </div>
+  </div>
+  <div class="desc">真正 16×16 像素剪刀 · 红/粉两片刀刃 · 金色铆钉 · 小到 16px 也清晰</div>
+
+
+  <!-- ========================= 尺寸 preview ========================= -->
+  <div class="section-title" style="margin-top:60px">B1 尺寸 & 使用预览</div>
+  <div style="display:flex;align-items:center;gap:40px;padding:32px;background:#121218;border:1px solid #262631;border-radius:16px;flex-wrap:wrap">
+    <!-- 16px -->
+    <div style="text-align:center">
+      <svg width="16" height="16" viewBox="0 0 16 16" class="svg-pixel" style="display:block;margin:0 auto">
+        <rect width="16" height="16" fill="#1f1f28"/>
+        <g fill="#e12927">
+          <rect x="2" y="2" width="2" height="2"/>
+          <rect x="6" y="6" width="2" height="2"/>
+          <rect x="2" y="10" width="4" height="2"/>
+          <rect x="5" y="11" width="2" height="3"/>
+          <rect x="2" y="13" width="4" height="2"/>
+        </g>
+        <g fill="#ec4899">
+          <rect x="12" y="2" width="2" height="2"/>
+          <rect x="8" y="6" width="2" height="2"/>
+          <rect x="10" y="10" width="4" height="2"/>
+          <rect x="9" y="11" width="2" height="3"/>
+          <rect x="10" y="13" width="4" height="2"/>
+        </g>
+        <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+      </svg>
+      <div style="color:#6b7280;font-size:11px;margin-top:8px">16 · favicon</div>
+    </div>
+    <!-- 32 -->
+    <div style="text-align:center">
+      <svg width="32" height="32" viewBox="0 0 16 16" class="svg-pixel" style="display:block;margin:0 auto">
+        <rect width="16" height="16" fill="#1f1f28"/>
+        <g fill="#e12927">
+          <rect x="2" y="2" width="2" height="2"/><rect x="3" y="3" width="2" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="5" y="5" width="2" height="2"/><rect x="6" y="6" width="2" height="2"/>
+          <rect x="2" y="10" width="4" height="2"/><rect x="1" y="11" width="2" height="3"/><rect x="5" y="11" width="2" height="3"/><rect x="2" y="13" width="4" height="2"/>
+        </g>
+        <g fill="#ec4899">
+          <rect x="12" y="2" width="2" height="2"/><rect x="11" y="3" width="2" height="2"/><rect x="10" y="4" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/><rect x="8" y="6" width="2" height="2"/>
+          <rect x="10" y="10" width="4" height="2"/><rect x="9" y="11" width="2" height="3"/><rect x="13" y="11" width="2" height="3"/><rect x="10" y="13" width="4" height="2"/>
+        </g>
+        <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+      </svg>
+      <div style="color:#6b7280;font-size:11px;margin-top:8px">32 · tab icon</div>
+    </div>
+    <!-- 64 -->
+    <div style="text-align:center">
+      <svg width="64" height="64" viewBox="0 0 16 16" class="svg-pixel" style="display:block;margin:0 auto">
+        <rect width="16" height="16" fill="#1f1f28"/>
+        <g fill="#e12927">
+          <rect x="2" y="2" width="2" height="2"/><rect x="3" y="3" width="2" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="5" y="5" width="2" height="2"/><rect x="6" y="6" width="2" height="2"/>
+          <rect x="2" y="10" width="4" height="2"/><rect x="1" y="11" width="2" height="3"/><rect x="5" y="11" width="2" height="3"/><rect x="2" y="13" width="4" height="2"/>
+        </g>
+        <g fill="#ec4899">
+          <rect x="12" y="2" width="2" height="2"/><rect x="11" y="3" width="2" height="2"/><rect x="10" y="4" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/><rect x="8" y="6" width="2" height="2"/>
+          <rect x="10" y="10" width="4" height="2"/><rect x="9" y="11" width="2" height="3"/><rect x="13" y="11" width="2" height="3"/><rect x="10" y="13" width="4" height="2"/>
+        </g>
+        <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+      </svg>
+      <div style="color:#6b7280;font-size:11px;margin-top:8px">64 · sidebar</div>
+    </div>
+
+    <!-- lockup with B1 wordmark -->
+    <div style="text-align:center;flex:1;min-width:280px">
+      <div class="lockup-wrap" style="justify-content:center">
+        <svg width="48" height="48" viewBox="0 0 16 16" class="svg-pixel">
+          <rect width="16" height="16" fill="#1f1f28"/>
+          <g fill="#e12927">
+            <rect x="2" y="2" width="2" height="2"/><rect x="3" y="3" width="2" height="2"/><rect x="4" y="4" width="2" height="2"/><rect x="5" y="5" width="2" height="2"/><rect x="6" y="6" width="2" height="2"/>
+            <rect x="2" y="10" width="4" height="2"/><rect x="1" y="11" width="2" height="3"/><rect x="5" y="11" width="2" height="3"/><rect x="2" y="13" width="4" height="2"/>
+          </g>
+          <g fill="#ec4899">
+            <rect x="12" y="2" width="2" height="2"/><rect x="11" y="3" width="2" height="2"/><rect x="10" y="4" width="2" height="2"/><rect x="9" y="5" width="2" height="2"/><rect x="8" y="6" width="2" height="2"/>
+            <rect x="10" y="10" width="4" height="2"/><rect x="9" y="11" width="2" height="3"/><rect x="13" y="11" width="2" height="3"/><rect x="10" y="13" width="4" height="2"/>
+          </g>
+          <rect x="7" y="7" width="2" height="2" fill="#ffd700"/>
+        </svg>
+        <div class="pixel-wordmark" style="font-size:22px"><span class="pod">POD</span><span class="slash" style="font-size:22px;transform:translateY(-2px)">/</span><span class="cut">CUT</span></div>
+      </div>
+      <div style="color:#6b7280;font-size:11px;margin-top:8px">lockup</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

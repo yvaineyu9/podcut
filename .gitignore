@@ -1,0 +1,45 @@
+# Secrets — HuggingFace token lives here, NEVER commit
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Generated artifacts (per-run output, don't commit)
+*.transcript.json
+*.whisper-cache.json
+*.selections.json
+*.final.mp4
+*.final.mov
+*.social.md
+
+# But DO commit demo example files (they double as docs)
+!demo/transcript.json
+!demo/selections.example.json
+!demo/social.example.md
+
+# Model caches (multi-GB; users download themselves)
+.cache/
+cache/
+huggingface/
+modelscope/
+
+# Docker build artifacts
+.docker/
