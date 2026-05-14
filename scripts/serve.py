@@ -9,11 +9,10 @@ Endpoints
     GET  /api/transcript         the current transcript JSON, if any
     POST /api/jobs               { type: "transcribe" | "cut", params: {...} }
     GET  /api/jobs/<id>          { status, progress, stdout_tail, result }
-    POST /api/suggest            {speaker_weights, target_ratio, strip_fillers}
     GET  /api/download/<token>   download a finished cut video
     POST /api/save-selections    persists the editor's selections.json next to video
 
-Everything is localhost. No external network. No API keys.
+Everything is localhost. No external network.
 """
 
 from __future__ import annotations
@@ -122,10 +121,6 @@ class Job:
 STATE = State()
 
 
-# ============================================================================
-# Suggestion algorithm
-# ============================================================================
-
 import struct as _struct
 
 
@@ -167,77 +162,6 @@ def generate_waveform_peaks(video_path: Path, peaks_per_second: int = 20) -> dic
         "duration": num_samples / sample_rate,
         "peaks": peaks,
     }
-
-
-# ============================================================================
-# Suggestion algorithm
-# ============================================================================
-
-_FILLER_RE = re.compile(r"^[嗯啊哦呃唔对好是的哈呵呀嘿噢ok\s,.，。、!?！？\-—…]*$", re.IGNORECASE)
-_EMPHASIS = ["其实", "但是", "不过", "最重要", "最关键", "核心", "关键", "一句话",
-             "记住", "必须", "千万", "真的", "绝对", "归根结底", "说白了", "本质"]
-
-
-def suggest_tags(segments: list[dict], speaker_weights: dict[str, float],
-                 target_ratio: float, strip_fillers: bool) -> list[dict]:
-    """Score each segment, then greedily cut low-scorers until compression hits target.
-    Returns [{id, tags: [cut? highlight?]}] for segments that got a suggestion."""
-    total = sum(float(s["end"]) - float(s["start"]) for s in segments) or 1.0
-    scored: list[tuple[dict, float]] = []
-
-    for s in segments:
-        dur = float(s["end"]) - float(s["start"])
-        text = (s.get("text") or "").strip()
-        w = float(speaker_weights.get(s.get("speaker", ""), 1.0))
-        score = w
-
-        if strip_fillers and _FILLER_RE.match(text) and dur < 2.5:
-            score *= 0.04
-        elif dur < 1.2 and len(text) < 8:
-            score *= 0.35
-
-        if any(e in text for e in _EMPHASIS):
-            score *= 1.35
-
-        if dur > 8 and len(text) > 30:
-            score *= 1.2
-
-        # Slight penalty for host-like "mm-hmm" backchanneling even with full weight
-        if len(text) < 4 and dur < 1.0:
-            score *= 0.3
-
-        scored.append((s, score))
-
-    # Target cut duration
-    target_keep_dur = total * max(0.05, min(0.99, target_ratio))
-    target_cut_dur = total - target_keep_dur
-
-    # Cut from lowest-scoring segments
-    scored_asc = sorted(scored, key=lambda x: x[1])
-    cuts: set[int] = set()
-    cut_dur = 0.0
-    for s, _ in scored_asc:
-        if cut_dur >= target_cut_dur:
-            break
-        cuts.add(s["id"])
-        cut_dur += float(s["end"]) - float(s["start"])
-
-    # Highlights: top ~5% by score among non-cut segments, min duration 3s
-    keepers = [(s, sc) for (s, sc) in scored if s["id"] not in cuts and (float(s["end"]) - float(s["start"])) >= 3.0]
-    keepers.sort(key=lambda x: -x[1])
-    n_highlights = max(3, len(keepers) // 20)
-    highlights = {s["id"] for s, _ in keepers[:n_highlights]}
-
-    out: list[dict] = []
-    for s in segments:
-        tags: list[str] = []
-        if s["id"] in cuts:
-            tags.append("cut")
-        if s["id"] in highlights:
-            tags.append("highlight")
-        if tags:
-            out.append({"id": s["id"], "tags": tags})
-    return out
 
 
 # ============================================================================
@@ -384,6 +308,120 @@ def run_cut(job: Job) -> None:
     }
 
 
+def run_analyze(job: Job) -> None:
+    """Run Claude Code CLI to analyze transcript and return cut/highlight decisions."""
+    if not STATE.transcript_path or not STATE.transcript_path.exists():
+        job.status = "error"; job.error = "No transcript loaded"
+        return
+
+    transcript_data = json.loads(STATE.transcript_path.read_text())
+    segments = transcript_data.get("segments", [])
+    if not segments:
+        job.status = "error"; job.error = "Transcript has no segments"
+        return
+
+    # Build the transcript text for Claude
+    lines = []
+    for seg in segments:
+        sid = seg["id"]
+        start = seg["start"]
+        end = seg["end"]
+        speaker = seg.get("speaker", "?")
+        text = (seg.get("text") or "").strip()
+        lines.append(f"[{sid}] [{start:.1f}-{end:.1f}] [{speaker}] {text}")
+    transcript_text = "\n".join(lines)
+
+    prompt = f"""你是一个播客剪辑助手。以下是一期播客的转录稿，共{len(segments)}段。
+
+请分析每一段内容，为每段决定标签：
+- "cut" — 删除：假启动、纯废话（嗯/啊/对对对）、调设备、重复表达、跑题太远、过长卡壳
+- "highlight" — 金句：有洞察的总结、引人共鸣的体悟、可做短视频的句子、讨论高潮
+- 不标注 — 保留：有信息增量的观点、故事案例、话题过渡、不同视角的回应
+
+注意事项：
+- 保持话题完整性，不要从话题中间切断
+- 如果金句需要前面铺垫才能理解，铺垫也保留
+- 多人讨论中保留必要的短回应让对话自然
+- 转录可能有错字，根据上下文理解
+
+转录稿：
+{transcript_text}
+
+请只返回一个 JSON 数组，格式如下，只包含需要标记 cut 或 highlight 的段落（不标注的段不用列出）：
+[{{"id": 0, "tags": ["cut"]}}, {{"id": 5, "tags": ["highlight"]}}, ...]
+
+只返回 JSON，不要其他文字。"""
+
+    # Find claude CLI
+    import shutil as _shutil
+    claude_bin = _shutil.which("claude")
+    if not claude_bin:
+        # Common paths
+        for p in ["/usr/local/bin/claude", str(Path.home() / ".claude" / "local" / "claude"),
+                  str(Path.home() / ".nvm" / "versions" / "node" / "v22.16.0" / "bin" / "claude")]:
+            if Path(p).exists():
+                claude_bin = p
+                break
+    if not claude_bin:
+        job.status = "error"; job.error = "claude CLI not found on PATH"
+        return
+
+    job.log(f"Calling Claude CLI to analyze {len(segments)} segments...")
+    job.progress = 0.1
+
+    cmd = [claude_bin, "-p", prompt, "--output-format", "text"]
+    env = os.environ.copy()
+    env.pop("MCP_CONNECTOR", None)  # avoid MCP interference
+
+    try:
+        proc = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, bufsize=1, env=env,
+        )
+        job.progress = 0.3
+        stdout, stderr = proc.communicate(timeout=300)
+
+        if proc.returncode != 0:
+            job.status = "error"
+            job.error = f"claude exited {proc.returncode}: {stderr[:500]}"
+            job.log(stderr[:500])
+            return
+
+        job.progress = 0.8
+        job.log("Claude response received, parsing...")
+
+        # Extract JSON from response (Claude might wrap it in markdown code blocks)
+        response = stdout.strip()
+        # Strip markdown fences if present
+        if "```" in response:
+            import re as _re
+            m = _re.search(r"```(?:json)?\s*\n?(.*?)```", response, _re.DOTALL)
+            if m:
+                response = m.group(1).strip()
+
+        suggestions = json.loads(response)
+        if not isinstance(suggestions, list):
+            job.status = "error"; job.error = "Claude returned invalid format (expected JSON array)"
+            job.log(f"Response: {response[:500]}")
+            return
+
+        job.progress = 1.0
+        job.status = "done"
+        n_cut = sum(1 for s in suggestions if "cut" in s.get("tags", []))
+        n_hi = sum(1 for s in suggestions if "highlight" in s.get("tags", []))
+        job.log(f"Done: {n_cut} segments to cut, {n_hi} highlights")
+        job.result = {"suggestions": suggestions, "n_cut": n_cut, "n_highlight": n_hi}
+
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        job.status = "error"; job.error = "Claude CLI timed out (300s)"
+    except json.JSONDecodeError as e:
+        job.status = "error"; job.error = f"Failed to parse Claude's response as JSON: {e}"
+        job.log(f"Raw response: {stdout[:1000]}")
+    except Exception as exc:
+        job.status = "error"; job.error = f"{type(exc).__name__}: {exc}"
+
+
 def start_job(job: Job) -> None:
     def _wrap():
         job.status = "running"
@@ -392,6 +430,8 @@ def start_job(job: Job) -> None:
                 run_transcribe(job)
             elif job.type == "cut":
                 run_cut(job)
+            elif job.type == "analyze":
+                run_analyze(job)
             else:
                 job.status = "error"; job.error = f"Unknown job type: {job.type}"
         except Exception as exc:  # noqa: BLE001
@@ -543,8 +583,6 @@ class Handler(BaseHTTPRequestHandler):
             body = self._read_json_body()
             if path == "/api/jobs":
                 return self._api_start_job(body)
-            if path == "/api/suggest":
-                return self._api_suggest(body)
             if path == "/api/save-selections":
                 return self._api_save_selections(body)
             if path == "/api/pick-video":
@@ -622,7 +660,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _api_start_job(self, body: dict):
         job_type = body.get("type")
-        if job_type not in ("transcribe", "cut"):
+        if job_type not in ("transcribe", "cut", "analyze"):
             return self._json(400, {"error": f"invalid job type: {job_type}"})
         job = Job(job_type, body.get("params") or {})
         # For cut jobs, capture selections from the request
@@ -633,26 +671,6 @@ class Handler(BaseHTTPRequestHandler):
         STATE.jobs[job.id] = job
         start_job(job)
         return self._json(200, {"job_id": job.id})
-
-    def _api_suggest(self, body: dict):
-        # Prefer segments from request body (works when transcript lives only in the browser).
-        # Fall back to the server-tracked transcript file.
-        segs = body.get("segments")
-        if not segs:
-            if not STATE.transcript_path or not STATE.transcript_path.exists():
-                return self._json(400, {"error": "no transcript loaded (pass segments in body or load one server-side)"})
-            segs = json.loads(STATE.transcript_path.read_text()).get("segments", [])
-        weights = body.get("speaker_weights") or {}
-        target = float(body.get("target_ratio", 0.7))
-        strip = bool(body.get("strip_fillers", True))
-        suggestions = suggest_tags(segs, weights, target, strip)
-        return self._json(200, {"suggestions": suggestions,
-                                "meta": {
-                                    "total_segments": len(segs),
-                                    "target_ratio": target,
-                                    "suggested_cuts": sum(1 for s in suggestions if "cut" in s["tags"]),
-                                    "suggested_highlights": sum(1 for s in suggestions if "highlight" in s["tags"]),
-                                }})
 
     def _api_waveform(self):
         if not STATE.video_path:

@@ -47,15 +47,6 @@
   }
   .seg.cut .txt { text-decoration: line-through; color: #9ca3af; opacity: .55; }
   .seg.has-hi { box-shadow: inset 3px 0 0 var(--hi); }
-  .seg.suggested .tag-btn.on { opacity: .5; }
-  .seg.suggested::after {
-    content: 'AI'; position:absolute; top:4px; right:4px;
-    font-size: 9px; font-weight:700; letter-spacing:.05em;
-    color: var(--accent); opacity:.7;
-    background: rgba(167,139,250,.12);
-    border: 1px solid rgba(167,139,250,.3);
-    padding: 1px 4px; border-radius: 3px;
-  }
 
   .tag-btn {
     display:inline-flex; align-items:center; justify-content:center;
@@ -247,19 +238,13 @@
 
     <div class="flex-1"></div>
 
-    <!-- AI suggestions toggle -->
-    <div class="flex items-center gap-1 panel-2 rounded-lg pl-2.5 pr-1 py-1" :class="segments.length ? '' : 'opacity-40'">
-      <span class="text-[10px]">🤖 AI</span>
-      <button @click="toggleAutoSuggest()" :disabled="!segments.length"
-              class="relative w-9 h-4 rounded-full transition-colors"
-              :class="aiAutoMode ? 'bg-violet-500' : 'bg-gray-600'">
-        <span class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow"
-              :style="aiAutoMode ? 'left: 20px' : 'left: 2px'"></span>
-      </button>
-      <button @click="openSuggestionModal()" :disabled="!segments.length"
-              class="px-1 py-0.5 text-[10px] hover:text-white rounded" title="调整参数">⚙</button>
-    </div>
-
+    <button class="px-3 py-1.5 text-xs rounded-md panel-2 hover:border-violet-500 hover:text-white"
+            :disabled="!segments.length || !serverMode"
+            @click="startAnalyze()"
+            :class="segments.length && serverMode ? '' : 'opacity-40'"
+            title="调用本地 Claude Code 分析转录稿，智能标记删除/金句">
+      🧠 Claude 分析
+    </button>
     <button class="px-2 py-1 text-[10px] rounded-md panel-2 hover:border-[var(--accent)] hover:text-white"
             @click="showShortcuts = true">快捷键 <kbd>?</kbd></button>
     <button class="px-3 py-1.5 text-xs rounded-md btn-primary"
@@ -505,19 +490,6 @@
                class="w-full mt-1.5 panel-2 rounded px-2 py-1 text-xs focus:outline-none focus:border-violet-500 disabled:opacity-40">
       </section>
 
-      <!-- AI Suggestions status -->
-      <section x-show="hasSuggestions">
-        <div class="text-[10px] uppercase tracking-wider text-gray-600 mb-1">🤖 AI 建议</div>
-        <div class="text-[10px] text-gray-400">
-          <span x-text="suggestionStats.cut"></span> 段删除 ·
-          <span x-text="suggestionStats.hi"></span> 段金句
-        </div>
-        <div class="flex gap-1 mt-1.5">
-          <button @click="openSuggestionModal()" class="flex-1 text-[10px] panel-2 rounded px-2 py-1 hover:text-white">调整</button>
-          <button @click="clearSuggestions()" class="flex-1 text-[10px] panel-2 rounded px-2 py-1 hover:text-white hover:border-red-500/50">撤销</button>
-        </div>
-      </section>
-
       <!-- Shortcuts hint -->
       <section class="text-[10px] text-gray-600 leading-relaxed pt-2 border-t border-[var(--border)]">
         <div><kbd>Space</kbd> 播放 · <kbd>J</kbd>/<kbd>L</kbd> ±5s</div>
@@ -569,7 +541,6 @@
                'active': s.id === activeId,
                'cut':   s.tags.includes('cut'),
                'has-hi': s.tags.includes('highlight'),
-               'suggested': s.sourceIsAI,
              }"
              :data-id="s.id"
              @click="seekToSegment(s)">
@@ -628,61 +599,11 @@
     </div>
   </div>
 
-  <!-- ========================= SUGGESTION MODAL ========================= -->
-  <div class="modal-wrap" x-show="showSuggestModal" x-transition.opacity
-       @click.self="showSuggestModal = false" @keydown.escape.window="showSuggestModal = false">
-    <div class="panel rounded-2xl p-6 w-full max-w-lg">
-      <div class="flex items-center justify-between mb-1">
-        <div class="text-lg font-semibold">✨ 智能建议</div>
-        <button class="text-gray-500 hover:text-white" @click="showSuggestModal = false">✕</button>
-      </div>
-      <div class="text-xs text-gray-500 mb-5">AI 按长度、填充词、说话人、关键词打分，帮你选出删除和金句。</div>
-      <div class="space-y-5 text-sm">
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs text-gray-400">目标保留</label>
-            <span class="text-sm font-mono tabular-nums text-white" x-text="Math.round(suggestOpts.targetRatio * 100) + '%'"></span>
-          </div>
-          <input type="range" min="0.3" max="0.95" step="0.05" x-model.number="suggestOpts.targetRatio" class="w-full">
-          <div class="flex justify-between text-[10px] text-gray-600 mt-1"><span>大刀阔斧</span><span>轻度精修</span></div>
-        </div>
-        <div x-show="speakers.length">
-          <div class="text-xs text-gray-400 mb-2">说话人权重</div>
-          <template x-for="sp in speakers" :key="'weight-'+sp">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="w-2 h-2 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
-              <span class="w-24 text-xs truncate" x-text="spkName(sp)"></span>
-              <input type="range" min="0" max="1.5" step="0.1"
-                     :value="suggestOpts.speakerWeights[sp] ?? 1.0"
-                     @input="suggestOpts.speakerWeights[sp] = parseFloat($event.target.value)"
-                     class="flex-1">
-              <span class="w-8 text-right font-mono tabular-nums text-xs" x-text="(suggestOpts.speakerWeights[sp] ?? 1.0).toFixed(1)"></span>
-            </div>
-          </template>
-        </div>
-        <label class="flex items-start gap-2 text-sm cursor-pointer">
-          <input type="checkbox" x-model="suggestOpts.stripFillers" class="mt-0.5 accent-violet-500">
-          <div>
-            <div>自动删除超短填充词</div>
-            <div class="text-[11px] text-gray-500">&lt;2.5秒 且只含"嗯/啊/对/好"的段</div>
-          </div>
-        </label>
-      </div>
-      <div class="mt-6 flex gap-2">
-        <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="showSuggestModal = false">取消</button>
-        <button class="flex-1 btn-primary rounded-md py-2 text-sm" @click="runSuggest()" :disabled="suggestBusy">
-          <span x-show="!suggestBusy">生成建议</span>
-          <span x-show="suggestBusy">⏳ 分析中…</span>
-        </button>
-      </div>
-    </div>
-  </div>
-
   <!-- ========================= JOB PROGRESS MODAL ========================= -->
   <div class="modal-wrap" x-show="job" x-transition.opacity>
     <div class="panel rounded-2xl p-6 w-full max-w-lg">
       <div class="flex items-center justify-between mb-4">
-        <div class="text-lg font-semibold" x-text="job?.type === 'transcribe' ? '🎙️ 正在转录…' : '💾 正在导出…'"></div>
+        <div class="text-lg font-semibold" x-text="job?.type === 'transcribe' ? '🎙️ 正在转录…' : job?.type === 'analyze' ? '🧠 Claude 分析中…' : '💾 正在导出…'"></div>
         <span class="text-xs text-gray-500 font-mono" x-text="job && ('已用 ' + fmtElapsed(job.elapsed))"></span>
       </div>
       <div class="h-2 bg-[var(--panel-2)] rounded-full overflow-hidden mb-2">
@@ -758,13 +679,6 @@
 
       showShortcuts: false,
       showTranscribeModal: false,
-      showSuggestModal: false,
-
-      aiAutoMode: true,
-      hasSuggestions: false,
-      suggestionStats: { cut: 0, hi: 0 },
-      suggestOpts: { targetRatio: 0.7, stripFillers: true, speakerWeights: {} },
-      suggestBusy: false,
 
       transcribeOpts: { backend: 'mlx', numSpeakers: null, language: 'zh', model: 'large-v3' },
       exportFormat: 'mp4',
@@ -818,7 +732,7 @@
         window.addEventListener('keydown', (e) => {
           const t = e.target;
           if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-          if (this.job || this.showTranscribeModal || this.showSuggestModal) return;
+          if (this.job || this.showTranscribeModal) return;
           this.handleKey(e);
         });
 
@@ -880,8 +794,6 @@
           if (resp.video_path) {
             this.segments = [];
             this.speakers = [];
-            this.hasSuggestions = false;
-            this.suggestionStats = { cut: 0, hi: 0 };
             this.activeId = null;
             this.waveformData = null;
             this.useAudioFallback = false;
@@ -919,15 +831,9 @@
           speaker: s.speaker || 'UNKNOWN',
           text: s.text || '',
           tags: [],
-          sourceIsAI: false,
         }));
         this.speakers = Array.from(new Set(this.segments.map(s => s.speaker))).sort();
-        this.speakers.forEach(sp => { if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0; });
         this.tryRestore();
-        const hasUserTags = this.segments.some(s => s.tags.length > 0);
-        if (this.serverMode && this.aiAutoMode && !hasUserTags) {
-          this.runSuggestSilent();
-        }
         // Load waveform
         if (this.serverMode) {
           this.loadWaveform();
@@ -1392,95 +1298,10 @@
         }
       },
 
-      // ============ SUGGESTIONS ============
-      async runSuggestSilent() {
-        try {
-          const payload = {
-            speaker_weights: this.suggestOpts.speakerWeights,
-            target_ratio: this.suggestOpts.targetRatio,
-            strip_fillers: this.suggestOpts.stripFillers,
-            segments: this.segments.map(s => ({ id: s.id, start: s.start, end: s.end, speaker: s.speaker, text: s.text })),
-          };
-          const resp = await api('/api/suggest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          const sugMap = new Map(resp.suggestions.map(s => [s.id, s.tags]));
-          this.segments = this.segments.map(s => {
-            const tags = sugMap.get(s.id);
-            if (tags) return { ...s, tags: [...tags], sourceIsAI: true };
-            return s;
-          });
-          this.hasSuggestions = true;
-          this.suggestionStats = { cut: resp.meta.suggested_cuts, hi: resp.meta.suggested_highlights };
-          this.persist();
-          this.$nextTick(() => this.drawWaveform());
-        } catch (e) {
-          console.warn('auto suggest failed:', e.message);
-        }
-      },
-
-      async toggleAutoSuggest() {
-        if (!this.segments.length) return;
-        this.aiAutoMode = !this.aiAutoMode;
-        if (this.aiAutoMode) await this.runSuggestSilent();
-        else this.clearSuggestions();
-      },
-
       applySelections(data) {
         const byId = new Map(data.segments.map(s => [s.id, s.tags || []]));
         this.segments = this.segments.map(s => ({ ...s, tags: [...(byId.get(s.id) || [])] }));
         if (data.speaker_names) this.speakerNames = data.speaker_names;
-        this.persist();
-        this.$nextTick(() => this.drawWaveform());
-      },
-
-      openSuggestionModal() {
-        if (!this.segments.length) { alert('先加载转录稿'); return; }
-        if (!this.serverMode) { alert('智能建议需要服务器模式'); return; }
-        this.speakers.forEach(sp => {
-          if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0;
-        });
-        this.showSuggestModal = true;
-      },
-
-      async runSuggest() {
-        this.suggestBusy = true;
-        try {
-          const payload = {
-            speaker_weights: this.suggestOpts.speakerWeights,
-            target_ratio: this.suggestOpts.targetRatio,
-            strip_fillers: this.suggestOpts.stripFillers,
-            segments: this.segments.map(s => ({ id: s.id, start: s.start, end: s.end, speaker: s.speaker, text: s.text })),
-          };
-          const resp = await api('/api/suggest', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          const sugMap = new Map(resp.suggestions.map(s => [s.id, s.tags]));
-          this.segments = this.segments.map(s => {
-            const tags = sugMap.get(s.id);
-            if (tags) return { ...s, tags: [...tags], sourceIsAI: true };
-            return { ...s, tags: [], sourceIsAI: false };
-          });
-          this.hasSuggestions = true;
-          this.suggestionStats = { cut: resp.meta.suggested_cuts, hi: resp.meta.suggested_highlights };
-          this.showSuggestModal = false;
-          this.persist();
-          this.$nextTick(() => this.drawWaveform());
-        } catch (e) {
-          alert('生成建议失败: ' + e.message);
-        } finally {
-          this.suggestBusy = false;
-        }
-      },
-
-      clearSuggestions() {
-        this.segments = this.segments.map(s => ({ ...s, tags: [], sourceIsAI: false }));
-        this.hasSuggestions = false;
-        this.suggestionStats = { cut: 0, hi: 0 };
         this.persist();
         this.$nextTick(() => this.drawWaveform());
       },
@@ -1490,13 +1311,11 @@
         const i = seg.tags.indexOf(tag);
         if (i >= 0) seg.tags.splice(i, 1);
         else seg.tags.push(tag);
-        seg.sourceIsAI = false;
         this.persist();
         this.$nextTick(() => this.drawWaveform());
       },
       clearTags(seg) {
         seg.tags.splice(0, seg.tags.length);
-        seg.sourceIsAI = false;
         this.persist();
         this.$nextTick(() => this.drawWaveform());
       },
@@ -1666,8 +1485,6 @@
           const payload = {
             speaker_names: this.speakerNames,
             segments: this.segments.map(s => ({ id: s.id, tags: s.tags })),
-            has_suggestions: this.hasSuggestions,
-            suggestion_stats: this.suggestionStats,
           };
           localStorage.setItem(this.storageKey(), JSON.stringify(payload));
         } catch (_) {}
@@ -1681,10 +1498,6 @@
           if (Array.isArray(d.segments)) {
             const byId = new Map(d.segments.map(s => [s.id, s.tags || []]));
             this.segments = this.segments.map(s => ({ ...s, tags: [...(byId.get(s.id) || [])] }));
-          }
-          if (d.has_suggestions) {
-            this.hasSuggestions = true;
-            this.suggestionStats = d.suggestion_stats || { cut: 0, hi: 0 };
           }
         } catch (_) {}
       },
@@ -1719,6 +1532,34 @@
           });
         } catch (e) {
           alert('启动转录失败: ' + e.message);
+        }
+      },
+
+      // ============ CLAUDE ANALYZE ============
+      async startAnalyze() {
+        if (!this.serverMode || !this.segments.length) return;
+        try {
+          const { job_id } = await api('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'analyze' }),
+          });
+          this.pollJob(job_id, (j) => {
+            if (j.status === 'done' && j.result?.suggestions) {
+              // Apply Claude's decisions to segments
+              const sugMap = new Map(j.result.suggestions.map(s => [s.id, s.tags || []]));
+              this.segments = this.segments.map(s => {
+                const tags = sugMap.get(s.id);
+                if (tags) return { ...s, tags: [...tags] };
+                return { ...s, tags: [] };
+              });
+              this.persist();
+              this.$nextTick(() => this.drawWaveform());
+              alert(`Claude 分析完成：${j.result.n_cut} 段标记删除，${j.result.n_highlight} 段标记金句`);
+            }
+          });
+        } catch (e) {
+          alert('启动分析失败: ' + e.message);
         }
       },
 
