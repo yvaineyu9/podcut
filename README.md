@@ -7,208 +7,143 @@
 
 # PodCut
 
-**把几小时的中文播客 → 剪好的成片 + 小红书金句**
+**播客/音频剪辑工具 — 转录 → 标记 → 导出**
 
-End-to-end pipeline for turning long-form Chinese video podcasts into polished, social-ready cuts.
-Local-first · works offline · no per-minute fees.
+Apple Silicon 原生加速，本地运行，无需付费 API。
 
 </div>
 
 ---
 
-## What it does
+## 功能
 
-Drop a 4-hour video in. Get out:
-- 🎙️ A speaker-labeled transcript (`SPEAKER_00`, `SPEAKER_01`, …)
-- ✂️ A trimmed final video (the boring bits cut, the good bits kept)
-- 🪙 A bullet list of 金句 ready to drop into a 小红书 / 公众号 draft
+- **AI 转录** — mlx-whisper 在 Apple Silicon 上原生运行，4分钟音频约36秒转好
+- **波形时间线** — 真实音频波形，支持 Ctrl+滚轮缩放（最高30倍），精准定位
+- **标记剪辑** — 键盘驱动：`X` 删除废话，`H` 标记金句，`Z` 清除
+- **AI 建议** — 自动标记填充词/废话为删除，标记亮点为金句
+- **成片预览** — `P` 键切换，播放时自动跳过删除段
+- **导出** — 一键导出 MP4/MOV 精剪成片
+- **视频+音频** — 支持 mp4/mov/mkv + mp3/m4a/wav/flac
 
-It's a one-command local web app. The UI is a Mario-themed pixel-art editor with a dual-lane timeline for speakers, a `🍄` mushroom playhead, and bouncing `¥` coins above your highlighted clips. Keyboard-driven editing (`X` to cut, `H` for 金句).
+## 快速开始
 
-## Pipeline
-
-```
-video.mp4
-   │
-   ▼  [1] transcribe.py   (WhisperX + pyannote)
-transcript.json   ← speaker-labeled segments with timestamps
-   │
-   ▼  [2] editor (browser) — AI suggests, you refine
-selections.json   ← each segment tagged keep / cut / highlight
-   │
-   ├──▶  [3a] cut.py     →  final.mp4 / final.mov  (trimmed video)
-   └──▶  [3b] extract.py →  social.md  (金句 + full kept transcript, for 小红书 drafting)
-```
-
-## Features
-
-- **WhisperX + pyannote** — automatic transcription with speaker diarization
-- **AI suggestions** — heuristic scoring marks fillers as `cut` and quotables as `highlight`, on a per-speaker weight you control
-- **Preview mode** — play the video as if cuts were already applied (skips `cut`-tagged segments live)
-- **Lossless concat** — `ffmpeg` re-encodes once at clean cut boundaries, no glitches
-- **MP4 or MOV export** — pick your container in the UI
-- **Mario timeline** — chunky pixel art shows everyone's segments by speaker, gold coins flag highlights, a mushroom is the playhead. Just for fun.
-- **HF mirror support** — `HF_ENDPOINT=https://hf-mirror.com` is the default for China users
-- **ModelScope fallback** — when HuggingFace is unreachable, you can pre-download the Whisper model from ModelScope (Aliyun CDN, ~40 MB/s from China) and PodCut will pick up the local cache
-
-## Compatibility (read this once, save yourself an hour)
-
-**`whisperx` and `pyannote.audio` both depend on `torchcodec`, which is built against ffmpeg 4–7.**
-Installing the latest ffmpeg (8.x) silently breaks audio loading. PodCut handles this for you:
-
-| Platform | What you get | Why it works |
-|---|---|---|
-| **macOS via `setup.sh`** | `brew install ffmpeg@7` (keg-only, coexists with anything) | Pinned to 7.1.x; `start.sh` puts it first on `PATH` for our scripts only |
-| **Docker** (`Dockerfile`) | `python:3.11-slim-bookworm` + `apt install ffmpeg` (= 5.1.x) | Bookworm is locked, build aborts if a future image bump lands ffmpeg ≥ 8 |
-| **Manual install** | You're on your own — make sure `ffmpeg --version` reports 4, 5, 6, or 7 | torchcodec ABI compat |
-
-Python deps are pinned in [`requirements.txt`](requirements.txt) (torch 2.8.0 / torchcodec 0.7.0 / whisperx 3.8.5 / pyannote.audio 4.0.4). Re-running `pip install -r requirements.txt` in a fresh `python==3.11` venv reproduces a known-good environment.
-
-## Install
-
-### Option A — Native (recommended for Apple Silicon)
+### 1. 安装
 
 ```bash
-git clone https://github.com/jinyang0530/podcut.git
+git clone https://github.com/yvaineyu9/podcut.git
 cd podcut
 bash scripts/setup.sh
 ```
 
-`setup.sh` installs Homebrew (if missing), `python@3.11`, `ffmpeg@7`, creates a venv, installs the pinned `requirements.txt`, and prompts for a free HuggingFace token. ~10 min, ~4 GB disk.
+> `setup.sh` 会安装 `python@3.11`、`ffmpeg@7`、创建 venv、安装依赖。约10分钟。
 
-**Required HuggingFace gated-repo terms** — visit each link and click "Agree and access":
-- https://huggingface.co/pyannote/speaker-diarization-community-1
-- https://huggingface.co/pyannote/segmentation-3.0
-
-Then create a read token at https://huggingface.co/settings/tokens.
-
-### Option B — Docker
+### 2. 安装 mlx-whisper（推荐）
 
 ```bash
-git clone https://github.com/jinyang0530/podcut.git
-cd podcut
-cp .env.example .env       # then edit .env and paste your HF_TOKEN
-docker compose up
+.venv/bin/pip install mlx-whisper
 ```
 
-Browser opens to `http://localhost:8787`. Drop videos into `./videos/` (mounted as `/data` inside the container).
+> Apple Silicon 原生转录引擎，不需要 HF_TOKEN，不需要 torchcodec。
 
-> ⚠️ Native picker (`osascript`) won't work in Docker. Use the **"📂 选择视频文件"** button in the editor — the server will pick from files in `/data` instead.
-
-## Usage
+### 3. 启动
 
 ```bash
-bash scripts/start.sh /path/to/video.mp4
-# or, with no argument, pick the video in the browser:
 bash scripts/start.sh
+# 或直接指定文件：
+bash scripts/start.sh /path/to/podcast.mp3
 ```
 
-This starts a local HTTP server on `127.0.0.1:8787`, opens the editor in your default browser, and (if you passed a video) auto-loads it.
+浏览器自动打开 `http://127.0.0.1:8787`
 
-In the editor:
-
-1. **▶ 开始转录** — click if there's no transcript yet. Pick speaker count, language, and model size. Runs in the background; progress and live log shown in a modal.
-2. **✨ AI suggestions** — auto-runs after the transcript loads. The `🤖 AI 建议` toggle in the top bar turns it off (manual mode) or back on. Click `⚙` for fine-tuning (per-speaker weight, target compression ratio, strip-fillers).
-3. **Refine** — keyboard shortcuts:
-   - `X` — cut · `H` — 金句 · `Z` — clear tags
-   - `Space` — play/pause · `J` / `L` — seek ±5s · `↑` / `↓` — prev / next segment
-   - `P` — toggle 原片 / ✂ 成片 preview
-4. **💾 导出最终视频** — runs `cut.py` on the server, downloads the final MP4 or MOV when done.
-5. Run `python scripts/extract.py <selections.json>` to dump the 金句 list (`social.md`) — then ask Claude (or anyone) to rewrite it into a 小红书 post.
-
-## Architecture
-
-Everything is local. No third-party APIs are called during editing or cutting.
+## 使用流程
 
 ```
-start.sh <video>
-    └─▶ serve.py  (Python stdlib HTTP server on 127.0.0.1:8787)
-          ├─ serves editor/index.html  (single-file Tailwind + Alpine.js app)
-          ├─ serves the video file (Range-aware, for scrubbing)
-          ├─ /api/jobs       → spawns transcribe.py / cut.py as subprocesses
-          ├─ /api/suggest    → scores segments and returns cut/highlight suggestions
-          ├─ /api/pick-video → opens the macOS native file picker via osascript
-          └─ /api/download/<token> → streams the final MP4
+音频/视频文件
+   │
+   ▼  📂 选择文件（支持视频和音频）
+   │
+   ▼  ▶ 开始转录（mlx-whisper，选 large-v3 或 small）
+   │
+   ▼  编辑器：波形时间线 + 段落列表
+   │   X = 删除  H = 金句  Z = 清除
+   │   AI 自动建议 + 手动微调
+   │
+   ▼  💾 导出最终视频/音频
 ```
 
-Network use happens only on first run (downloading whisper + pyannote model weights, ~3 GB total).
+## 编辑器界面
 
-## Data contracts
-
-**transcript.json** (output of `transcribe.py`)
-```json
-{
-  "video_path": "/abs/path.mp4",
-  "duration": 14400.0,
-  "language": "zh",
-  "num_speakers": 4,
-  "segments": [
-    { "id": 0, "start": 0.0, "end": 3.52, "speaker": "SPEAKER_00", "text": "..." }
-  ]
-}
+```
+┌──────────────────────────────────────────────┐
+│ Header (logo · 文件名 · AI开关 · 导出)        │
+├──────────────────────────────────────────────┤
+│          媒体预览（视频大画面/音频播放器）       │
+├──────────────────────────────────────────────┤
+│ ⏪ ▶ ⏩ │ 时间码 │ 当前说话人: 文本            │
+├──────────────────────────────────────────────┤
+│ [-][+] 缩放 │ 统计信息                        │
+│ ┌────────────────────────────────────────┐   │
+│ │ 时间刻度尺                              │   │
+│ │ ~~音频波形~~ (紫=保留 红=删除 金=金句)   │   │
+│ │ ████ 说话人色带 ████                    │   │
+│ └────────────────────────────────────────┘   │
+├────────┬─────────────────────────────────────┤
+│ 统计    │ 段落列表                            │
+│ 说话人  │ 00:13 SPEAKER_00: 文本... [💣][🪙]  │
+│ 筛选    │ ...                                 │
+└────────┴─────────────────────────────────────┘
 ```
 
-**selections.json** (output of editor → input to `cut.py` / `extract.py`)
-```json
-{
-  "video_path": "/abs/path.mp4",
-  "speaker_names": { "SPEAKER_00": "主持人", "SPEAKER_01": "嘉宾" },
-  "segments": [
-    { "id": 0, "start": 0.0, "end": 3.52, "speaker": "SPEAKER_00",
-      "text": "...", "tags": ["highlight"] }
-  ]
-}
-```
+## 快捷键
 
-Tags: `cut` (drop) and `highlight` (金句). Anything else is kept by default.
+| 操作 | 快捷键 |
+|------|--------|
+| 播放/暂停 | `Space` |
+| 后退/前进 5s | `J` / `L` |
+| 上/下一段 | `↑` / `↓` |
+| 跳到段首 | `0` |
+| 标记删除 | `X` |
+| 标记金句 | `H` |
+| 清除标签 | `Z` |
+| 原片/成片切换 | `P` |
+| 波形放大/缩小 | `+` / `-` |
 
-## Troubleshooting
+## 转录模型
 
-**HuggingFace download stalls / `Read timed out` from `cas-bridge.xethub.hf.co`** — Common in China. Set `HF_ENDPOINT=https://hf-mirror.com` (already default). For the big Whisper model.bin file the mirror still redirects to xet, so as a last resort run:
+| 模型 | 大小 | 中文精度 | 速度（M2） |
+|------|------|---------|-----------|
+| **large-v3** | ~3GB | 最好 | 68分钟→6分钟 |
+| **small** | ~460MB | 够用 | 68分钟→2分钟 |
 
-```bash
-python -c "from modelscope import snapshot_download; \
-  snapshot_download('pengzhendong/faster-whisper-medium', \
-  cache_dir='~/.cache/modelscope/')"
-```
+首次使用需下载模型。如遇网络问题，脚本会自动绕过本地代理。
 
-then symlink/copy the files into `~/.cache/huggingface/hub/models--Systran--faster-whisper-medium/snapshots/manual/`. PodCut auto-detects that path.
-
-**Diarization fails but Whisper succeeded** — `transcribe.py` saves a `<video>.whisper-cache.json` after Whisper completes. Run `python scripts/diarize_only.py <video> --num-speakers N` to retry just the speaker step without redoing the 20+ minutes of Whisper work.
-
-**Editor shows "独立模式"** — you opened the HTML directly via `file://` instead of through the server. Use `bash scripts/start.sh` for the full experience.
-
-**Port 8787 in use** — `serve.py` falls back to the next free port automatically (8787–8799).
-
-## Project layout
+## 项目结构
 
 ```
 podcut/
 ├── scripts/
-│   ├── setup.sh           # one-time install (brew + python@3.11 + venv + deps)
-│   ├── start.sh           # one-command launcher
-│   ├── serve.py           # local HTTP server (stdlib only)
-│   ├── transcribe.py      # video → transcript.json
-│   ├── diarize_only.py    # rerun speaker diarization from a Whisper cache
-│   ├── cut.py             # selections.json + video → final.mp4 / .mov
-│   └── extract.py         # selections.json → social.md
+│   ├── setup.sh             # 一键安装
+│   ├── start.sh             # 启动服务
+│   ├── serve.py             # HTTP 服务 + API
+│   ├── transcribe_mlx.py    # mlx-whisper 转录（推荐）
+│   ├── transcribe.py        # WhisperX 转录（需 HF_TOKEN）
+│   ├── cut.py               # 按标记切割音视频
+│   └── extract.py           # 导出金句列表
 ├── editor/
-│   ├── index.html         # the single-file editor (Tailwind + Alpine.js)
-│   ├── logo-mark.svg      # the icon (Mario ? block + scissors)
-│   └── logo.html          # logo explorations
+│   └── index.html           # 单文件编辑器（Tailwind + Alpine.js）
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
 ```
 
+## 技术栈
+
+- **转录**: mlx-whisper（Apple Silicon）/ WhisperX（通用）
+- **波形**: ffmpeg PCM 提取 + Canvas 渲染
+- **前端**: Alpine.js + Tailwind CSS（单文件 HTML）
+- **后端**: Python stdlib HTTP server
+- **切割**: ffmpeg
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
-
-## Acknowledgements
-
-- [whisperx](https://github.com/m-bain/whisperX) — alignment + diarization wrapper around Whisper
-- [pyannote.audio](https://github.com/pyannote/pyannote-audio) — speaker diarization
-- [faster-whisper](https://github.com/SYSTRAN/faster-whisper) — CTranslate2-based Whisper inference
-- [ModelScope](https://modelscope.cn/) — China-friendly model mirror
-- 🍄 Mario assets are tributes only; not affiliated with Nintendo.
+MIT
