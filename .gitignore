@@ -25,7 +25,6 @@ Thumbs.db
 # Claude Code skill metadata — only used when this lives under ~/.claude/skills/.
 # Keep it out of the public repo so the project reads as a standalone tool.
 AGENTS.md
-CLAUDE.md
 SKILL.md
 
 

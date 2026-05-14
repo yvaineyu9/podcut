@@ -90,6 +90,8 @@
     overflow-y: hidden;
     position: relative;
     cursor: crosshair;
+    -webkit-user-select: none;
+    user-select: none;
   }
   .waveform-scroll::-webkit-scrollbar { height: 8px; }
   .waveform-scroll::-webkit-scrollbar-track { background: var(--panel-2); }
@@ -377,14 +379,17 @@
 
       <div class="flex-1"></div>
 
-      <span class="text-[10px] text-gray-600" x-show="waveZoom > 1">Ctrl+滚轮缩放 · 拖拽滚动</span>
+      <span class="text-[10px] text-gray-600" x-show="waveZoom > 1">Ctrl+滚轮缩放 · 拖拽边界调整切点</span>
       <span class="text-[10px] text-gray-600" x-show="waveLoading">波形生成中…</span>
     </div>
 
     <!-- Canvas scroll area -->
     <div class="waveform-scroll" style="height: 152px"
          x-ref="waveScroll"
-         @click="onWaveClick($event)"
+         @mousedown="onWaveMouseDown($event)"
+         @mousemove="onWaveMouseMove($event)"
+         @mouseup="onWaveMouseUp($event)"
+         @mouseleave="onWaveMouseLeave($event)"
          @wheel="onWaveWheel($event)">
 
       <!-- Empty state: no transcript -->
@@ -519,6 +524,7 @@
         <div><kbd>↑</kbd><kbd>↓</kbd> 切段 · <kbd>0</kbd> 段首</div>
         <div><kbd>X</kbd> 删除 · <kbd>H</kbd> 金句 · <kbd>Z</kbd> 清除</div>
         <div><kbd>P</kbd> 原片/成片 · <kbd>+</kbd><kbd>-</kbd> 缩放</div>
+        <div class="mt-1 text-gray-500">拖拽波形上的段落边界可微调切点</div>
       </section>
     </aside>
 
@@ -775,6 +781,11 @@
       waveZoom: 1,
       waveLoading: false,
       waveContainerW: 800,
+
+      // ============ DRAG STATE (boundary adjustment) ============
+      _drag: null,         // { segId, edge:'start'|'end', origTime }
+      _dragHover: null,    // { segId, edge, px } — hover indicator
+      _clickPending: null, // deferred click-to-seek
 
       get waveWidth() {
         return Math.round(this.waveContainerW * this.waveZoom);
@@ -1040,24 +1051,13 @@
         ctx.lineTo(totalWidth, rulerH);
         ctx.stroke();
 
-        // === SEGMENT BACKGROUNDS ===
-        for (const seg of this.segments) {
-          const x1 = (seg.start / this.duration) * totalWidth;
-          const x2 = (seg.end / this.duration) * totalWidth;
-          if (seg.tags.includes('cut')) {
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.07)';
-            ctx.fillRect(x1, rulerH, x2 - x1, waveH);
-          } else if (seg.tags.includes('highlight')) {
-            ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
-            ctx.fillRect(x1, rulerH, x2 - x1, waveH);
-          }
-        }
-
-        // === WAVEFORM PEAKS ===
-        // Build segment lookup for peak coloring
+        // === WAVEFORM: low-contrast base + selected segment highlight ===
         const totalPeaks = peaks.length;
         const pxPerPeak = totalWidth / totalPeaks;
+        const activeStart = this.activeSeg ? this.activeSeg.start : -1;
+        const activeEnd = this.activeSeg ? this.activeSeg.end : -1;
 
+        // Pass 1: draw ALL peaks as dim base layer (low-contrast strip)
         for (let i = 0; i < totalPeaks; i++) {
           const [pMin, pMax] = peaks[i];
           const x = i * pxPerPeak;
@@ -1069,12 +1069,15 @@
             if (t >= s.start && t < s.end) { seg = s; break; }
           }
 
+          const isActive = t >= activeStart && t < activeEnd;
+
+          // Base colors: very dim
           if (seg?.tags.includes('cut')) {
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+            ctx.fillStyle = isActive ? 'rgba(239, 68, 68, 0.55)' : 'rgba(239, 68, 68, 0.12)';
           } else if (seg?.tags.includes('highlight')) {
-            ctx.fillStyle = '#d97706';
+            ctx.fillStyle = isActive ? 'rgba(245, 158, 11, 0.9)' : 'rgba(245, 158, 11, 0.18)';
           } else {
-            ctx.fillStyle = '#7c3aed';
+            ctx.fillStyle = isActive ? 'rgba(167, 139, 250, 0.85)' : 'rgba(167, 139, 250, 0.15)';
           }
 
           const y1 = midY - pMax * ampScale;
@@ -1083,8 +1086,34 @@
           ctx.fillRect(x, y1, barW, Math.max(1, y2 - y1));
         }
 
+        // Active segment background glow
+        if (this.activeSeg) {
+          const x1 = (activeStart / this.duration) * totalWidth;
+          const x2 = (activeEnd / this.duration) * totalWidth;
+          ctx.fillStyle = 'rgba(167, 139, 250, 0.06)';
+          ctx.fillRect(x1, rulerH, x2 - x1, waveH);
+        }
+
+        // Cut segment backgrounds (subtle red tint for inactive)
+        for (const seg of this.segments) {
+          if (!seg.tags.includes('cut')) continue;
+          const x1 = (seg.start / this.duration) * totalWidth;
+          const x2 = (seg.end / this.duration) * totalWidth;
+          if (seg.id !== this.activeId) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.04)';
+            ctx.fillRect(x1, rulerH, x2 - x1, waveH);
+            // Strikethrough line for cut segments
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.15)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(x1, midY);
+            ctx.lineTo(x2, midY);
+            ctx.stroke();
+          }
+        }
+
         // Zero line
-        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
         ctx.lineWidth = 0.5;
         ctx.beginPath();
         ctx.moveTo(0, midY);
@@ -1092,10 +1121,12 @@
         ctx.stroke();
 
         // === SEGMENT BOUNDARIES ===
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.lineWidth = 0.5;
         for (const seg of this.segments) {
           const x = (seg.start / this.duration) * totalWidth;
+          const isAdjacentToActive = this.activeSeg &&
+            (Math.abs(seg.start - activeStart) < 0.05 || Math.abs(seg.start - activeEnd) < 0.05);
+          ctx.strokeStyle = isAdjacentToActive ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.07)';
+          ctx.lineWidth = isAdjacentToActive ? 1.5 : 0.5;
           ctx.beginPath();
           ctx.moveTo(x, rulerH);
           ctx.lineTo(x, rulerH + waveH);
@@ -1107,30 +1138,203 @@
         for (const seg of this.segments) {
           const x1 = (seg.start / this.duration) * totalWidth;
           const x2 = (seg.end / this.duration) * totalWidth;
+          const isActive = seg.id === this.activeId;
           ctx.fillStyle = this.speakerColor(seg.speaker);
-          ctx.globalAlpha = seg.tags.includes('cut') ? 0.25 : 0.6;
+          ctx.globalAlpha = seg.tags.includes('cut') ? (isActive ? 0.4 : 0.1) : (isActive ? 0.8 : 0.25);
           ctx.fillRect(x1, barY, Math.max(1, x2 - x1), speakerBarH);
         }
         ctx.globalAlpha = 1;
 
-        // === ACTIVE SEGMENT HIGHLIGHT ===
+        // === ACTIVE SEGMENT BORDER ===
         if (this.activeSeg) {
-          const x1 = (this.activeSeg.start / this.duration) * totalWidth;
-          const x2 = (this.activeSeg.end / this.duration) * totalWidth;
-          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          const x1 = (activeStart / this.duration) * totalWidth;
+          const x2 = (activeEnd / this.duration) * totalWidth;
+          ctx.strokeStyle = 'rgba(167, 139, 250, 0.5)';
           ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 3]);
           ctx.strokeRect(x1 + 0.5, rulerH + 0.5, x2 - x1 - 1, waveH + speakerBarH + 1);
+          ctx.setLineDash([]);
+        }
+
+        // === DRAG BOUNDARY INDICATORS ===
+        const drawHandle = (px, color, width) => {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          ctx.moveTo(px, rulerH);
+          ctx.lineTo(px, rulerH + waveH + speakerBarH + 2);
+          ctx.stroke();
+          // Small diamond handle at center
+          const cy = rulerH + waveH / 2;
+          ctx.fillStyle = color;
+          ctx.beginPath();
+          ctx.moveTo(px, cy - 6);
+          ctx.lineTo(px + 4, cy);
+          ctx.lineTo(px, cy + 6);
+          ctx.lineTo(px - 4, cy);
+          ctx.closePath();
+          ctx.fill();
+        };
+
+        if (this._drag) {
+          const seg = this.segments.find(s => s.id === this._drag.segId);
+          if (seg) {
+            const t = this._drag.edge === 'start' ? seg.start : seg.end;
+            const px = (t / this.duration) * totalWidth;
+            drawHandle(px, '#fff', 2.5);
+            // Time tooltip
+            ctx.fillStyle = 'rgba(0,0,0,0.85)';
+            ctx.fillRect(px + 8, rulerH + 4, 52, 16);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(px + 8, rulerH + 4, 52, 16);
+            ctx.fillStyle = '#fff';
+            ctx.font = '10px ui-monospace, monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(this.fmtTs(t), px + 12, rulerH + 16);
+          }
+        } else if (this._dragHover) {
+          const seg = this.segments.find(s => s.id === this._dragHover.segId);
+          if (seg) {
+            const t = this._dragHover.edge === 'start' ? seg.start : seg.end;
+            const px = (t / this.duration) * totalWidth;
+            drawHandle(px, 'rgba(167,139,250,0.8)', 2);
+          }
         }
       },
 
-      onWaveClick(e) {
+      // ============ WAVEFORM MOUSE: drag boundaries + click-to-seek ============
+      _waveX(e) {
+        const c = this.$refs.waveScroll;
+        return e.clientX - c.getBoundingClientRect().left + c.scrollLeft;
+      },
+      _xToTime(x) { return (x / this.waveWidth) * this.duration; },
+      _timeToX(t) { return (t / this.duration) * this.waveWidth; },
+
+      _findBoundary(e) {
+        const x = this._waveX(e);
+        const threshold = Math.max(5, 5 / this.waveZoom * 2); // scale with zoom
+        let best = null, bestDist = threshold;
+        for (const seg of this.segments) {
+          const sx = this._timeToX(seg.start);
+          const ex = this._timeToX(seg.end);
+          const ds = Math.abs(x - sx);
+          const de = Math.abs(x - ex);
+          if (ds < bestDist) { bestDist = ds; best = { segId: seg.id, edge: 'start', px: sx }; }
+          if (de < bestDist) { bestDist = de; best = { segId: seg.id, edge: 'end', px: ex }; }
+        }
+        return best;
+      },
+
+      onWaveMouseDown(e) {
+        if (e.button !== 0 || !this.duration) return;
+        const boundary = this._findBoundary(e);
+        if (boundary) {
+          e.preventDefault();
+          e.stopPropagation();
+          const seg = this.segments.find(s => s.id === boundary.segId);
+          this._drag = { ...boundary, origTime: seg[boundary.edge] };
+          // Prevent text selection while dragging
+          document.body.style.userSelect = 'none';
+        } else {
+          this._clickPending = { clientX: e.clientX, clientY: e.clientY };
+        }
+      },
+
+      onWaveMouseMove(e) {
+        if (!this.duration) return;
+        if (this._drag) {
+          // Dragging a boundary
+          e.preventDefault();
+          const x = this._waveX(e);
+          let t = Math.round(this._xToTime(x) * 100) / 100; // round to 0.01s
+          t = Math.max(0, Math.min(this.duration, t));
+
+          const seg = this.segments.find(s => s.id === this._drag.segId);
+          if (!seg) return;
+
+          const sorted = [...this.segments].sort((a, b) => a.start - b.start);
+          const idx = sorted.findIndex(s => s.id === seg.id);
+
+          if (this._drag.edge === 'start') {
+            // Clamp: can't go past own end - 0.1s
+            t = Math.min(t, seg.end - 0.1);
+            // Can't go before previous segment's start
+            if (idx > 0) t = Math.max(t, sorted[idx - 1].start + 0.05);
+            // Adjust adjacent segment's end if they share boundary
+            if (idx > 0 && Math.abs(sorted[idx - 1].end - seg.start) < 0.1) {
+              sorted[idx - 1].end = t;
+            }
+            seg.start = t;
+          } else {
+            // Clamp: can't go before own start + 0.1s
+            t = Math.max(t, seg.start + 0.1);
+            // Can't go past next segment's end
+            if (idx < sorted.length - 1) t = Math.min(t, sorted[idx + 1].end - 0.05);
+            // Adjust adjacent segment's start if they share boundary
+            if (idx < sorted.length - 1 && Math.abs(sorted[idx + 1].start - seg.end) < 0.1) {
+              sorted[idx + 1].start = t;
+            }
+            seg.end = t;
+          }
+          this.drawWaveform();
+          return;
+        }
+        // Hover detection — show resize cursor near boundaries
+        const boundary = this._findBoundary(e);
         const container = this.$refs.waveScroll;
-        if (!container || !this.duration) return;
-        const rect = container.getBoundingClientRect();
-        const x = e.clientX - rect.left + container.scrollLeft;
-        const totalWidth = this.waveWidth;
-        const t = (x / totalWidth) * this.duration;
-        this.seekTo(t);
+        if (boundary) {
+          container.style.cursor = 'col-resize';
+          if (!this._dragHover || this._dragHover.segId !== boundary.segId || this._dragHover.edge !== boundary.edge) {
+            this._dragHover = boundary;
+            this.drawWaveform();
+          }
+        } else {
+          if (this._dragHover) {
+            this._dragHover = null;
+            this.drawWaveform();
+          }
+          container.style.cursor = 'crosshair';
+        }
+      },
+
+      onWaveMouseUp(e) {
+        if (this._drag) {
+          this._drag = null;
+          this._dragHover = null;
+          document.body.style.userSelect = '';
+          this.persist();
+          this.drawWaveform();
+          return;
+        }
+        // Click-to-seek (only if mouse didn't move much)
+        if (this._clickPending) {
+          const dx = Math.abs(e.clientX - this._clickPending.clientX);
+          const dy = Math.abs(e.clientY - this._clickPending.clientY);
+          if (dx < 4 && dy < 4) {
+            const container = this.$refs.waveScroll;
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left + container.scrollLeft;
+            this.seekTo((x / this.waveWidth) * this.duration);
+          }
+          this._clickPending = null;
+        }
+      },
+
+      onWaveMouseLeave(e) {
+        if (this._drag) {
+          // Commit drag even if mouse leaves
+          this._drag = null;
+          document.body.style.userSelect = '';
+          this.persist();
+        }
+        if (this._dragHover) {
+          this._dragHover = null;
+          this.drawWaveform();
+        }
+        this._clickPending = null;
+        const container = this.$refs.waveScroll;
+        if (container) container.style.cursor = 'crosshair';
       },
 
       onWaveWheel(e) {
@@ -1568,17 +1772,27 @@
 
       // ============ JOB POLLING ============
       pollJob(jobId, onDone) {
+        let failCount = 0;
         const loop = async () => {
           try {
             const j = await api(`/api/jobs/${jobId}`);
+            failCount = 0;
             this.job = j;
             if (j.status === 'done' || j.status === 'error') {
               if (onDone) await onDone(j);
               this._pollTimer = null;
               return;
             }
-          } catch (e) { /* keep trying */ }
-          this._pollTimer = setTimeout(loop, 1000);
+          } catch (e) {
+            failCount++;
+            if (failCount >= 5) {
+              // Server restarted or job lost — stop polling
+              this.job = { type: 'transcribe', status: 'error', progress: 0, stdout_tail: '', error: '任务丢失（服务器可能已重启），请关闭此弹窗重新开始转录', elapsed: 0 };
+              this._pollTimer = null;
+              return;
+            }
+          }
+          this._pollTimer = setTimeout(loop, 2000);
         };
         loop();
       },
