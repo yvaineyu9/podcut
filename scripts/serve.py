@@ -126,6 +126,53 @@ STATE = State()
 # Suggestion algorithm
 # ============================================================================
 
+import struct as _struct
+
+
+# ============================================================================
+# Waveform peak generation
+# ============================================================================
+
+def generate_waveform_peaks(video_path: Path, peaks_per_second: int = 20) -> dict:
+    """Extract audio from video via ffmpeg and compute min/max peaks per time window."""
+    sample_rate = 8000
+    samples_per_peak = sample_rate // peaks_per_second
+
+    cmd = [
+        "ffmpeg", "-i", str(video_path),
+        "-vn", "-ac", "1", "-ar", str(sample_rate),
+        "-f", "f32le", "pipe:1",
+    ]
+    proc = subprocess.run(cmd, capture_output=True, timeout=300, env=_augmented_env())
+    if proc.returncode != 0:
+        stderr = proc.stderr.decode(errors="replace")[:500]
+        raise RuntimeError(f"ffmpeg waveform extraction failed: {stderr}")
+
+    raw = proc.stdout
+    num_samples = len(raw) // 4
+    if num_samples == 0:
+        raise RuntimeError("No audio data extracted from video")
+
+    samples = _struct.unpack(f"<{num_samples}f", raw)
+    peaks: list[list[float]] = []
+    for i in range(0, num_samples, samples_per_peak):
+        chunk = samples[i : i + samples_per_peak]
+        if not chunk:
+            break
+        peaks.append([round(min(chunk), 4), round(max(chunk), 4)])
+
+    return {
+        "peaks_per_second": peaks_per_second,
+        "sample_rate": sample_rate,
+        "duration": num_samples / sample_rate,
+        "peaks": peaks,
+    }
+
+
+# ============================================================================
+# Suggestion algorithm
+# ============================================================================
+
 _FILLER_RE = re.compile(r"^[嗯啊哦呃唔对好是的哈呵呀嘿噢ok\s,.，。、!?！？\-—…]*$", re.IGNORECASE)
 _EMPHASIS = ["其实", "但是", "不过", "最重要", "最关键", "核心", "关键", "一句话",
              "记住", "必须", "千万", "真的", "绝对", "归根结底", "说白了", "本质"]
@@ -203,43 +250,57 @@ def run_transcribe(job: Job) -> None:
         job.status = "error"; job.error = "No video selected"
         return
     params = job.params
-    # Output transcript next to the video so subsequent runs can auto-load.
+    backend = params.get("backend", "whisperx")
     out_path = video.with_suffix("").with_name(video.stem + ".transcript.json")
-    cmd = [str(VENV_PYTHON), str(SKILL_DIR / "scripts" / "transcribe.py"),
-           str(video), "--output", str(out_path)]
-    if params.get("num_speakers"):
-        cmd += ["--num-speakers", str(params["num_speakers"])]
-    if params.get("language"):
-        cmd += ["--language", str(params["language"])]
-    if params.get("model"):
-        cmd += ["--model", str(params["model"])]
 
-    # Use hf-mirror.com by default — HuggingFace is often unreachable from China.
-    # Users can override by exporting HF_ENDPOINT before running start.sh.
-    # _augmented_env() also prepends ffmpeg@7's bin to PATH so the right ffmpeg is used.
-    env = _augmented_env({
-        "HF_ENDPOINT": os.environ.get("HF_ENDPOINT", "https://hf-mirror.com"),
-        # Disable Xet backend (cas-bridge.xethub.hf.co) which bypasses the mirror
-        # and fails frequently on networks that can't reach AWS S3 reliably.
-        "HF_HUB_DISABLE_XET": "1",
-        "HF_XET_HIGH_PERFORMANCE": "0",
-        # Also disable fast hf_transfer which sometimes hangs on flaky networks.
-        "HF_HUB_DISABLE_TELEMETRY": "1",
-        "HF_HUB_ENABLE_HF_TRANSFER": "0",
-    })
+    if backend == "mlx":
+        # Lightweight mlx-whisper backend (Apple Silicon native, no heavy deps)
+        cmd = [str(VENV_PYTHON), str(SKILL_DIR / "scripts" / "transcribe_mlx.py"),
+               str(video), "--output", str(out_path)]
+        if params.get("language"):
+            cmd += ["--language", str(params["language"])]
+        if params.get("model"):
+            cmd += ["--model", str(params["model"])]
+        env = _augmented_env()
+    else:
+        # Full WhisperX + pyannote backend (speaker diarization)
+        cmd = [str(VENV_PYTHON), str(SKILL_DIR / "scripts" / "transcribe.py"),
+               str(video), "--output", str(out_path)]
+        if params.get("num_speakers"):
+            cmd += ["--num-speakers", str(params["num_speakers"])]
+        if params.get("language"):
+            cmd += ["--language", str(params["language"])]
+        if params.get("model"):
+            cmd += ["--model", str(params["model"])]
+        env = _augmented_env({
+            "HF_ENDPOINT": os.environ.get("HF_ENDPOINT", "https://hf-mirror.com"),
+            "HF_HUB_DISABLE_XET": "1",
+            "HF_XET_HIGH_PERFORMANCE": "0",
+            "HF_HUB_DISABLE_TELEMETRY": "1",
+            "HF_HUB_ENABLE_HF_TRANSFER": "0",
+        })
 
-    job.log(f"$ HF_ENDPOINT={env['HF_ENDPOINT']} {' '.join(cmd)}")
+    job.log(f"$ [{backend}] {' '.join(cmd)}")
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
     # Poor-man's progress: parse the progress phases out of the stdout lines.
-    PHASES = [
-        ("Loading whisperx",           0.05),
-        ("Extracting audio",           0.10),
-        ("Transcribing",               0.20),
-        ("detected language",          0.55),
-        ("Aligning word timestamps",   0.65),
-        ("Running speaker diarization", 0.80),
-        ("✅ Done",                     1.00),
-    ]
+    if backend == "mlx":
+        PHASES = [
+            ("Loading whisperx",           0.05),
+            ("Extracting audio",           0.10),
+            ("Transcribing",               0.20),
+            ("detected language",          0.70),
+            ("✅ Done",                     1.00),
+        ]
+    else:
+        PHASES = [
+            ("Loading whisperx",           0.05),
+            ("Extracting audio",           0.10),
+            ("Transcribing",               0.20),
+            ("detected language",          0.55),
+            ("Aligning word timestamps",   0.65),
+            ("Running speaker diarization", 0.80),
+            ("✅ Done",                     1.00),
+        ]
     assert proc.stdout is not None
     for line in proc.stdout:
         line = line.rstrip()
@@ -454,6 +515,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not STATE.transcript_path or not STATE.transcript_path.exists():
                     return self._json(404, {"error": "no transcript"})
                 return self._serve_file(STATE.transcript_path, "application/json; charset=utf-8")
+            if path == "/api/waveform":
+                return self._api_waveform()
             if path.startswith("/api/jobs/"):
                 jid = path[len("/api/jobs/"):]
                 job = STATE.jobs.get(jid)
@@ -495,8 +558,8 @@ class Handler(BaseHTTPRequestHandler):
     def _api_pick_video(self):
         """Open macOS native file picker via osascript. Blocks until user picks or cancels."""
         script = (
-            'POSIX path of (choose file with prompt "选择要处理的视频文件" '
-            'of type {"public.movie","mp4","mov","m4v","mkv","avi","webm"})'
+            'POSIX path of (choose file with prompt "选择视频或音频文件" '
+            'of type {"public.movie","public.audio","mp4","mov","m4v","mkv","avi","webm","mp3","m4a","wav","flac","ogg","aac","wma"})'
         )
         try:
             result = subprocess.run(
@@ -590,6 +653,19 @@ class Handler(BaseHTTPRequestHandler):
                                     "suggested_cuts": sum(1 for s in suggestions if "cut" in s["tags"]),
                                     "suggested_highlights": sum(1 for s in suggestions if "highlight" in s["tags"]),
                                 }})
+
+    def _api_waveform(self):
+        if not STATE.video_path:
+            return self._json(404, {"error": "no video"})
+        peaks_path = STATE.video_path.with_name(STATE.video_path.stem + ".waveform.json")
+        if peaks_path.exists():
+            return self._serve_file(peaks_path, "application/json; charset=utf-8")
+        try:
+            data = generate_waveform_peaks(STATE.video_path)
+            peaks_path.write_text(json.dumps(data))
+            return self._json(200, data)
+        except Exception as exc:  # noqa: BLE001
+            return self._json(500, {"error": f"waveform generation failed: {exc}"})
 
     def _api_save_selections(self, body: dict):
         if not STATE.video_path:

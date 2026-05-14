@@ -49,3 +49,7 @@ modelscope/
 
 # Docker build artifacts
 .docker/
+
+# Runtime data
+current_transcript.txt
+selections.json

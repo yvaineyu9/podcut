@@ -33,18 +33,13 @@
     --cut:  #ef4444;
     --hi:   #f59e0b;
   }
-  html, body { background: var(--bg); color: var(--ink); }
-  body {
-    background-image:
-      radial-gradient(1200px 600px at 10% -10%, rgba(167,139,250,.15), transparent 60%),
-      radial-gradient(900px 500px at 110% 10%, rgba(245,158,11,.10), transparent 60%);
-    background-attachment: fixed;
-  }
+  html, body { background: var(--bg); color: var(--ink); margin: 0; }
   [x-cloak] { display: none !important; }
   .panel  { background: var(--panel); border: 1px solid var(--border); }
   .panel-2{ background: var(--panel-2); border: 1px solid var(--border); }
 
-  .seg { content-visibility: auto; contain-intrinsic-size: 72px; }
+  /* Segment list items */
+  .seg { content-visibility: auto; contain-intrinsic-size: 68px; }
   .seg:hover { background: rgba(255,255,255,.03); }
   .seg.active {
     background: linear-gradient(90deg, rgba(167,139,250,.2), rgba(167,139,250,.04));
@@ -64,7 +59,7 @@
 
   .tag-btn {
     display:inline-flex; align-items:center; justify-content:center;
-    min-width: 34px; height: 28px; padding: 0 8px;
+    min-width: 32px; height: 26px; padding: 0 6px;
     border-radius: 6px;
     font-size: 11px; font-weight: 700; letter-spacing: .02em;
     border: 1px solid var(--border);
@@ -75,125 +70,74 @@
   .tag-btn.on.cut  { background: color-mix(in oklab, var(--cut) 22%, transparent); color: var(--cut);  border-color: color-mix(in oklab, var(--cut) 45%, transparent); }
   .tag-btn.on.hi   { background: color-mix(in oklab, var(--hi)  22%, transparent); color: var(--hi);   border-color: color-mix(in oklab, var(--hi)  45%, transparent); }
 
-  /* ================ MARIO PIXEL TIMELINE (night theme) ================ */
-  :root {
-    --mario-sky-top:   #1a0b2e;   /* deep space purple */
-    --mario-sky-bot:   #2d1650;   /* lighter royal purple */
-    --mario-brick:     #c84b00;
-    --mario-brick-dark:#8a3300;
-    --mario-gold:      #ffd700;
-    --mario-gold-lt:   #fff4b0;
-    --mario-gold-dk:   #a57600;
-    --mario-gray:      #696969;
+  /* ===================== WAVEFORM TIMELINE ===================== */
+  .waveform-section {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
   }
-  .timeline {
+  .waveform-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 3px 16px;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+    height: 28px;
+  }
+  .waveform-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
     position: relative;
-    height: 82px;
-    border-radius: 4px;
-    overflow: hidden;
-    border: 2px solid #000;
-    background: linear-gradient(180deg, var(--mario-sky-top) 0%, var(--mario-sky-bot) 100%);
-    image-rendering: pixelated;
-    font-family: ui-monospace, "Courier New", monospace;
-    cursor: pointer;
+    cursor: crosshair;
   }
-  /* Pixel stars twinkling in the night sky */
-  .timeline::before {
-    content: '';
-    position: absolute; inset: 0;
-    background-image:
-      radial-gradient(circle at 8% 20%,  #fff 0 1px, transparent 2px),
-      radial-gradient(circle at 14% 35%, #e8d8ff 0 1px, transparent 2px),
-      radial-gradient(circle at 22% 18%, #fff 0 1.5px, transparent 2.5px),
-      radial-gradient(circle at 33% 28%, #c4b0ff 0 1px, transparent 2px),
-      radial-gradient(circle at 45% 15%, #fff 0 1px, transparent 2px),
-      radial-gradient(circle at 52% 33%, #fff4b0 0 1.5px, transparent 2.5px),
-      radial-gradient(circle at 63% 22%, #fff 0 1px, transparent 2px),
-      radial-gradient(circle at 72% 38%, #e8d8ff 0 1px, transparent 2px),
-      radial-gradient(circle at 80% 17%, #fff 0 1.5px, transparent 2.5px),
-      radial-gradient(circle at 89% 30%, #fff 0 1px, transparent 2px),
-      radial-gradient(circle at 95% 22%, #fff4b0 0 1px, transparent 2px);
-    animation: twinkle 3.5s ease-in-out infinite;
-    pointer-events: none;
-  }
-  @keyframes twinkle {
-    0%, 100% { opacity: .75; }
-    50%      { opacity: 1; }
-  }
-  /* Brick ground at bottom */
-  .timeline::after {
-    content: '';
-    position: absolute; left: 0; right: 0; bottom: 0;
-    height: 10px;
-    background:
-      repeating-linear-gradient(90deg,
-        var(--mario-brick) 0 12px,
-        var(--mario-brick-dark) 12px 14px,
-        var(--mario-brick) 14px 24px,
-        var(--mario-brick-dark) 24px 26px),
-      linear-gradient(180deg, var(--mario-brick) 0 50%, var(--mario-brick-dark) 50% 100%);
-    border-top: 2px solid #000;
-    image-rendering: pixelated;
-  }
+  .waveform-scroll::-webkit-scrollbar { height: 8px; }
+  .waveform-scroll::-webkit-scrollbar-track { background: var(--panel-2); }
+  .waveform-scroll::-webkit-scrollbar-thumb { background: #3a3a46; border-radius: 4px; }
 
-  .timeline .lane {
-    position: absolute; left: 0; right: 0;
-    height: 22px;
-  }
-  .timeline .lane.top { top: 18px; }
-  .timeline .lane.bottom { top: 42px; }
-
-  .timeline .lane-label {
-    position: absolute; left: 6px; z-index: 3;
-    font-size: 9px; font-weight: 700;
-    color: #fff;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
-    letter-spacing: .05em;
-    line-height: 22px;
-    pointer-events: none;
-  }
-
-  .tl-seg {
+  .waveform-playhead {
     position: absolute;
-    top: 3px; bottom: 3px;
-    min-width: 1px;
-    border: 1px solid #000;
-    transition: filter .12s;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #fff;
+    z-index: 5;
+    pointer-events: none;
+    transition: left 0.08s linear;
   }
-  .tl-seg:hover { filter: brightness(1.2); z-index: 4; }
-
-  /* Keep — brown brick block */
-  .tl-keep {
-    background:
-      linear-gradient(180deg, #e38148 0 20%, var(--mario-brick) 20% 80%, var(--mario-brick-dark) 80% 100%),
-      repeating-linear-gradient(90deg, rgba(0,0,0,.25) 0 1px, transparent 1px 3px);
-    background-blend-mode: multiply;
-    box-shadow: inset 1px 1px 0 rgba(255,255,255,.35), inset -1px -1px 0 rgba(0,0,0,.4);
+  .waveform-playhead::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -5px;
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 7px solid #fff;
   }
-
-  /* Cut — destroyed/gray block */
-  .tl-cut {
-    background: repeating-linear-gradient(45deg, #555 0 3px, #2c2c2c 3px 6px);
-    opacity: .55;
-    box-shadow: inset 0 0 0 1px rgba(239,68,68,.4);
-  }
-
-  /* Highlight — pulsing gold brick */
-  .tl-hi {
-    background:
-      linear-gradient(180deg, var(--mario-gold-lt) 0 25%, var(--mario-gold) 25% 80%, var(--mario-gold-dk) 80% 100%);
-    box-shadow:
-      inset 1px 1px 0 #fff,
-      inset -1px -1px 0 var(--mario-gold-dk),
-      0 0 10px rgba(255,215,0,.9);
-    animation: gold-pulse 1.4s ease-in-out infinite;
-  }
-  @keyframes gold-pulse {
-    0%, 100% { filter: brightness(1) saturate(1.1); }
-    50%      { filter: brightness(1.35) saturate(1.4); }
+  .playhead-time {
+    position: absolute;
+    top: 10px; left: 6px;
+    font: 700 9px/1 ui-monospace, monospace;
+    color: #fff;
+    background: rgba(0,0,0,.85);
+    border: 1px solid rgba(255,255,255,.3);
+    padding: 2px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    pointer-events: none;
   }
 
-  /* Pure-CSS gold coin (more saturated than 🪙 emoji, platform-independent) */
+  /* Zoom buttons */
+  .zoom-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 4px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--muted); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .1s;
+  }
+  .zoom-btn:hover { color: #fff; border-color: var(--accent); }
+
+  /* Gold coin */
   .coin {
     display: inline-block;
     width: 14px; height: 14px;
@@ -210,8 +154,7 @@
   }
   .coin::before {
     content: '¥';
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     display: flex; align-items: center; justify-content: center;
     font-size: 9px; font-weight: 900;
     color: #6b4e0a;
@@ -220,73 +163,35 @@
   .coin.lg { width: 18px; height: 18px; vertical-align: -3px; }
   .coin.lg::before { font-size: 11px; }
 
-  /* Coins bouncing above highlights on the timeline */
-  .tl-coin {
-    position: absolute;
-    top: 3px;
-    transform: translateX(-50%);
-    pointer-events: none;
-    animation: coin-bounce 0.9s ease-in-out infinite;
-  }
-  @keyframes coin-bounce {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50%      { transform: translateX(-50%) translateY(-4px); }
-  }
-
-  /* Mario mushroom playhead */
-  .tl-playhead {
-    position: absolute;
-    top: 0; bottom: 10px;
-    width: 2px;
-    background: rgba(255,255,255,.7);
-    z-index: 5; pointer-events: none;
-    transition: left .1s linear;
-  }
-  .tl-playhead::before {
-    content: '🍄';
-    position: absolute;
-    bottom: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 20px;
-    filter: drop-shadow(1px 1px 0 #000);
-  }
-  .tl-playhead.walking::before {
-    animation: mario-hop 0.35s ease-in-out infinite;
-  }
-  @keyframes mario-hop {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50%      { transform: translateX(-50%) translateY(-2px); }
-  }
-  .tl-playhead::after {
-    content: attr(data-time);
-    position: absolute;
-    top: 2px; left: 6px;
-    font: 700 9px/1 ui-monospace, monospace;
-    color: #fff;
-    background: rgba(0,0,0,.8);
-    border: 1px solid #fff;
-    padding: 2px 4px;
-    white-space: nowrap;
-  }
-
   kbd {
-    display: inline-block; padding: 1px 6px; border-radius: 4px;
+    display: inline-block; padding: 1px 5px; border-radius: 4px;
     background: #0f0f14; border: 1px solid var(--border);
-    font: 600 11px/1.3 ui-monospace, monospace; color: var(--ink);
+    font: 600 10px/1.3 ui-monospace, monospace; color: var(--ink);
     box-shadow: 0 1px 0 rgba(0,0,0,.6);
   }
 
-  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #2a2a34; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb { background: #2a2a34; border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #3a3a46; }
 
-  .fade-mask { mask-image: linear-gradient(to bottom, transparent, black 16px, black calc(100% - 16px), transparent); }
+  .btn-primary {
+    background: linear-gradient(135deg, #a78bfa, #f472b6);
+    color: white; font-weight: 600; border: none;
+    transition: all .15s;
+    box-shadow: 0 2px 12px rgba(167,139,250,.3);
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: .5; cursor: not-allowed; filter: saturate(.5); }
 
-  .bar { background: linear-gradient(90deg, var(--accent), var(--hi)); }
+  .modal-wrap { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); display:flex; align-items:center; justify-content:center; padding: 16px; }
 
-  /* Shimmer for progress */
+  input[type="range"] { accent-color: var(--accent); }
+
+  .pill-toggle { position: relative; display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
+  .pill-toggle button { padding: 3px 10px; font-size: 10px; font-weight: 600; color: var(--muted); border-radius: 999px; transition: all .15s; }
+  .pill-toggle button.on { background: var(--accent); color: #000; }
+
   @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
   .shimmer {
     background: linear-gradient(90deg, rgba(167,139,250,.1) 0%, rgba(167,139,250,.6) 50%, rgba(167,139,250,.1) 100%);
@@ -294,391 +199,395 @@
     animation: shimmer 1.8s linear infinite;
   }
 
-  /* big CTA button */
-  .btn-primary {
-    background: linear-gradient(135deg, #a78bfa, #f472b6);
-    color: white; font-weight: 600;
-    border: none;
-    transition: all .15s;
-    box-shadow: 0 2px 12px rgba(167,139,250,.3);
+  /* Transport controls bar */
+  .transport-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 16px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
   }
-  .btn-primary:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(167,139,250,.4); }
-  .btn-primary:disabled { opacity: .5; cursor: not-allowed; filter: saturate(.5); }
-
-  .modal-wrap { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.65); backdrop-filter: blur(6px); display:flex; align-items:center; justify-content:center; padding: 16px; }
-
-  input[type="range"] { accent-color: var(--accent); }
-
-  /* Pill toggle */
-  .pill-toggle { position: relative; display: inline-flex; background: var(--panel-2); border: 1px solid var(--border); border-radius: 999px; padding: 2px; }
-  .pill-toggle button { padding: 4px 12px; font-size: 11px; font-weight: 600; color: var(--muted); border-radius: 999px; transition: all .15s; }
-  .pill-toggle button.on { background: var(--accent); color: #000; }
+  .transport-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 26px; border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--muted); font-size: 13px;
+    transition: all .1s; cursor: pointer;
+  }
+  .transport-btn:hover { color: #fff; border-color: var(--accent); }
 </style>
 </head>
-<body class="min-h-screen font-sans antialiased">
+<body class="h-screen overflow-hidden font-sans antialiased">
 
-<div x-data="editor()" x-init="init()" x-cloak class="min-h-screen">
+<div x-data="editor()" x-init="init()" x-cloak class="h-full flex flex-col">
 
-  <!-- =========================== TOP BAR =========================== -->
-  <header class="sticky top-0 z-30 backdrop-blur bg-[#0a0a0f]/80 border-b border-[var(--border)]">
-    <div class="max-w-[1800px] mx-auto px-5 py-3">
-      <div class="flex items-center gap-5 mb-3">
-        <div class="flex items-center gap-2.5">
-          <!-- Mario ? block + scissors logo -->
-          <svg width="32" height="32" viewBox="0 0 100 100" style="image-rendering:pixelated;shape-rendering:crispEdges;flex-shrink:0">
-            <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
-            <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
-            <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
-            <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
-            <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
-            <g fill="#000">
-              <rect x="22" y="22" width="6" height="6"/>
-              <rect x="72" y="22" width="6" height="6"/>
-              <rect x="22" y="72" width="6" height="6"/>
-              <rect x="72" y="72" width="6" height="6"/>
-            </g>
-            <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
-            <circle cx="42" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
-            <circle cx="58" cy="-2" r="3" fill="none" stroke="#e12927" stroke-width="2"/>
-            <text x="50" y="62" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="28" fill="#000">?</text>
-          </svg>
-          <!-- Pixel wordmark -->
-          <div style="font-family:'Press Start 2P',monospace;font-size:16px;letter-spacing:1px;line-height:1">
-            <span style="color:#f3f4f6">POD</span><span style="color:#e12927;display:inline-block;transform:translateY(-1px);margin:0 2px">/</span><span style="color:#ffd700;text-shadow:1.5px 1.5px 0 #a57600">CUT</span>
-          </div>
-          <span class="text-xs text-gray-500 hidden md:block ml-1" x-text="serverMode ? ('· ' + (videoName || '未加载')) : '· 独立模式'"></span>
-          <span x-show="serverMode" class="text-[10px] font-semibold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">server</span>
-        </div>
-
-        <div class="flex-1"></div>
-
-        <!-- AI suggestions toggle (prominent) -->
-        <div class="flex items-center gap-1 panel-2 rounded-lg pl-3 pr-1 py-1" :class="segments.length ? '' : 'opacity-40'">
-          <span class="text-xs">🤖 AI 建议</span>
-          <button @click="toggleAutoSuggest()" :disabled="!segments.length"
-                  class="relative w-10 h-5 rounded-full transition-colors"
-                  :class="aiAutoMode ? 'bg-violet-500' : 'bg-gray-600'"
-                  :title="aiAutoMode ? '已开启：自动标记删除和金句' : '手动模式'">
-            <span class="absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all shadow"
-                  :style="aiAutoMode ? 'left: 22px' : 'left: 2px'"></span>
-          </button>
-          <button @click="openSuggestionModal()" :disabled="!segments.length"
-                  class="px-1.5 py-1 text-xs hover:text-white rounded"
-                  title="调整参数">⚙</button>
-        </div>
-
-        <button class="px-3 py-1.5 text-xs rounded-md panel-2 hover:border-[var(--accent)] hover:text-white"
-                @click="showShortcuts = true">快捷键 <kbd>?</kbd></button>
-        <button class="px-4 py-1.5 text-sm rounded-md btn-primary"
-                :disabled="!canExport"
-                @click="onExport()">
-          <span x-show="!serverMode">导出 selections.json</span>
-          <span x-show="serverMode">💾 导出最终视频</span>
-        </button>
+  <!-- ========================= HEADER ========================= -->
+  <header class="shrink-0 flex items-center gap-4 px-4 py-2 border-b border-[var(--border)] bg-[var(--panel)]">
+    <!-- Logo -->
+    <div class="flex items-center gap-2 shrink-0">
+      <svg width="28" height="28" viewBox="0 0 100 100" style="image-rendering:pixelated;shape-rendering:crispEdges">
+        <rect x="10" y="10" width="80" height="80" fill="#ffd700" stroke="#000" stroke-width="3"/>
+        <rect x="10" y="10" width="80" height="8" fill="#fff4b0"/>
+        <rect x="10" y="10" width="8" height="80" fill="#fff4b0"/>
+        <rect x="10" y="82" width="80" height="8" fill="#a57600"/>
+        <rect x="82" y="10" width="8" height="80" fill="#a57600"/>
+        <g fill="#000"><rect x="22" y="22" width="6" height="6"/><rect x="72" y="22" width="6" height="6"/><rect x="22" y="72" width="6" height="6"/><rect x="72" y="72" width="6" height="6"/></g>
+        <polygon points="40,-5 48,18 52,18 60,-5" fill="#e12927" stroke="#000" stroke-width="2"/>
+        <text x="50" y="62" text-anchor="middle" font-family="Press Start 2P, monospace" font-size="28" fill="#000">?</text>
+      </svg>
+      <div style="font-family:'Press Start 2P',monospace;font-size:14px;letter-spacing:1px;line-height:1">
+        <span style="color:#f3f4f6">POD</span><span style="color:#e12927;margin:0 2px">/</span><span style="color:#ffd700;text-shadow:1.5px 1.5px 0 #a57600">CUT</span>
       </div>
-
-      <!-- DUAL-LANE TIMELINE -->
-      <div class="timeline" @click="seekByBar($event)" x-show="segments.length">
-        <template x-for="(sp, idx) in speakers" :key="sp">
-          <div class="lane" :class="idx === 0 ? 'top' : 'bottom'">
-            <span class="lane-label" x-text="spkName(sp)"></span>
-            <template x-for="s in segments.filter(x => x.speaker === sp)" :key="s.id">
-              <div class="tl-seg"
-                   :class="{
-                     'tl-cut': s.tags.includes('cut'),
-                     'tl-hi': s.tags.includes('highlight'),
-                     'tl-keep': !s.tags.includes('cut') && !s.tags.includes('highlight'),
-                   }"
-                   :style="`left:${(s.start / duration) * 100}%; width:${Math.max(0.08, ((s.end-s.start)/duration) * 100)}%;`"
-                   :title="`${fmtTs(s.start)} · ${spkName(s.speaker)}`"></div>
-            </template>
-          </div>
-        </template>
-        <!-- Coins bouncing above highlights -->
-        <template x-for="s in segments.filter(x => x.tags.includes('highlight'))" :key="'coin-'+s.id">
-          <div class="tl-coin" :style="`left:${((s.start + (s.end-s.start)/2) / duration) * 100}%;`"><span class="coin"></span></div>
-        </template>
-        <div class="tl-playhead" :class="{walking: playing}" :style="`left: ${(currentTime/duration)*100}%`" :data-time="fmtTs(currentTime)"></div>
-      </div>
-      <div x-show="!segments.length" class="text-center text-xs text-gray-500 py-2" x-text="serverMode ? '点击下方「开始转录」生成转录稿' : '在左侧上传转录稿开始'"></div>
     </div>
+
+    <!-- Filename -->
+    <span class="text-xs text-gray-500 truncate max-w-[200px]" x-text="videoName || '未加载'"></span>
+    <span x-show="serverMode" class="text-[9px] font-semibold tracking-wider text-emerald-400 uppercase bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded">server</span>
+
+    <div class="flex-1"></div>
+
+    <!-- AI suggestions toggle -->
+    <div class="flex items-center gap-1 panel-2 rounded-lg pl-2.5 pr-1 py-1" :class="segments.length ? '' : 'opacity-40'">
+      <span class="text-[10px]">🤖 AI</span>
+      <button @click="toggleAutoSuggest()" :disabled="!segments.length"
+              class="relative w-9 h-4 rounded-full transition-colors"
+              :class="aiAutoMode ? 'bg-violet-500' : 'bg-gray-600'">
+        <span class="absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all shadow"
+              :style="aiAutoMode ? 'left: 20px' : 'left: 2px'"></span>
+      </button>
+      <button @click="openSuggestionModal()" :disabled="!segments.length"
+              class="px-1 py-0.5 text-[10px] hover:text-white rounded" title="调整参数">⚙</button>
+    </div>
+
+    <button class="px-2 py-1 text-[10px] rounded-md panel-2 hover:border-[var(--accent)] hover:text-white"
+            @click="showShortcuts = true">快捷键 <kbd>?</kbd></button>
+    <button class="px-3 py-1.5 text-xs rounded-md btn-primary"
+            :disabled="!canExport"
+            @click="onExport()">
+      <span x-show="!serverMode">导出 JSON</span>
+      <span x-show="serverMode">💾 导出视频</span>
+    </button>
   </header>
 
-  <!-- =========================== BODY =========================== -->
-  <main class="max-w-[1800px] mx-auto px-5 py-5 grid grid-cols-12 gap-5">
+  <!-- ========================= MEDIA PREVIEW ========================= -->
+  <div class="shrink-0 bg-black relative flex items-center justify-center"
+       :style="isAudio ? 'height: 80px' : 'height: 35vh; min-height: 180px'">
+    <video x-ref="video" controls
+           :class="isAudio ? 'w-full h-full' : 'h-full max-w-full object-contain'"
+           :style="isAudio ? 'object-fit: contain' : ''"
+           preload="metadata"
+           @timeupdate="onTimeUpdate"
+           @loadedmetadata="onVideoLoaded"
+           @error="onVideoError"></video>
+    <!-- Audio fallback: if <video> can't play, use <audio> -->
+    <audio x-ref="audioFallback" x-show="useAudioFallback" controls
+           class="w-full px-4"
+           preload="metadata"
+           @timeupdate="onTimeUpdate"
+           @loadedmetadata="onVideoLoaded"></audio>
 
-    <!-- ========== LEFT SIDEBAR ========== -->
-    <aside class="col-span-3 space-y-4">
+    <!-- Preview mode badge -->
+    <div x-show="previewMode" class="absolute top-3 left-3 text-[10px] font-bold bg-black/70 text-amber-400 px-2 py-1 rounded border border-amber-500/40">
+      ✂ 预览成片
+    </div>
 
-      <!-- Server status / video picker -->
-      <section class="panel rounded-xl p-4" x-show="serverMode">
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[11px] uppercase tracking-wider text-gray-500">当前视频</div>
-          <button x-show="videoPath" @click="pickVideo()" :disabled="picking"
-                  class="text-[11px] text-gray-400 hover:text-violet-400 transition">
+    <!-- No file: picker -->
+    <div x-show="!videoPath && !videoName" class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black">
+      <div class="text-4xl">🎬</div>
+      <template x-if="serverMode">
+        <button @click="pickVideo()" :disabled="picking"
+                class="btn-primary rounded-lg px-6 py-3 text-sm">
+          <span x-show="!picking">📂 选择视频/音频文件</span>
+          <span x-show="picking">⏳ 等待选择…</span>
+        </button>
+      </template>
+      <template x-if="!serverMode">
+        <label class="btn-primary rounded-lg px-6 py-3 text-sm cursor-pointer">
+          📂 选择视频/音频文件
+          <input type="file" accept="video/*,audio/*,.mp3,.m4a,.wav,.flac,.ogg,.aac" @change="loadVideoLocal($event)" class="hidden">
+        </label>
+      </template>
+      <div class="text-[11px] text-gray-500">支持视频（mp4/mov/mkv）和音频（mp3/m4a/wav/flac）</div>
+    </div>
+  </div>
+
+  <!-- ========================= TRANSPORT CONTROLS ========================= -->
+  <div class="transport-bar shrink-0">
+    <button class="transport-btn" @click="jumpBy(-5)" title="后退5s (J)">⏪</button>
+    <button class="transport-btn" style="width:36px" @click="togglePlay()" :title="playing ? '暂停 (Space)' : '播放 (Space)'">
+      <span x-text="playing ? '⏸' : '▶️'" style="font-size:15px"></span>
+    </button>
+    <button class="transport-btn" @click="jumpBy(5)" title="前进5s (L)">⏩</button>
+
+    <div class="w-px h-5 bg-[var(--border)]"></div>
+
+    <!-- Current time -->
+    <div class="font-mono tabular-nums text-sm text-white min-w-[60px]" x-text="fmtTs(currentTime)"></div>
+    <span class="text-gray-600">/</span>
+    <div class="font-mono tabular-nums text-xs text-gray-500 min-w-[60px]" x-text="fmtTs(duration)"></div>
+
+    <div class="w-px h-5 bg-[var(--border)]"></div>
+
+    <!-- Active speaker + text -->
+    <div class="flex items-center gap-2 flex-1 min-w-0 text-xs">
+      <span class="font-semibold shrink-0" :style="`color:${activeSeg ? speakerColor(activeSeg.speaker) : 'var(--muted)'}`"
+            x-text="activeSeg ? spkName(activeSeg.speaker) : ''"></span>
+      <span class="truncate text-gray-400" x-text="activeSeg?.text || '—'"></span>
+    </div>
+
+    <div class="w-px h-5 bg-[var(--border)]"></div>
+
+    <!-- Speed -->
+    <select class="bg-transparent text-[10px] text-gray-400 focus:outline-none" x-model.number="playbackRate" @change="(mediaEl||$refs.video).playbackRate=playbackRate">
+      <option value="0.5">0.5×</option>
+      <option value="1">1×</option>
+      <option value="1.25">1.25×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2×</option>
+    </select>
+
+    <!-- Preview mode toggle -->
+    <div class="pill-toggle">
+      <button :class="!previewMode && 'on'" @click="previewMode = false">原片</button>
+      <button :class="previewMode && 'on'" @click="previewMode = true">✂ 成片</button>
+    </div>
+
+    <!-- Export format -->
+    <div class="pill-toggle" x-show="serverMode">
+      <button :class="exportFormat==='mp4' && 'on'" @click="exportFormat='mp4'">MP4</button>
+      <button :class="exportFormat==='mov' && 'on'" @click="exportFormat='mov'">MOV</button>
+    </div>
+  </div>
+
+  <!-- ========================= WAVEFORM TIMELINE ========================= -->
+  <div class="waveform-section shrink-0" style="height: 188px">
+    <!-- Toolbar -->
+    <div class="waveform-toolbar">
+      <button class="zoom-btn" @click="zoomWave(-1)" title="缩小 (-)">−</button>
+      <span class="text-[10px] font-mono text-gray-400 min-w-[36px] text-center" x-text="waveZoom.toFixed(1) + '×'"></span>
+      <button class="zoom-btn" @click="zoomWave(1)" title="放大 (+)">+</button>
+      <button class="zoom-btn" @click="waveZoom = 1; $nextTick(() => drawWaveform())" title="适应宽度" style="width:auto;padding:0 6px;font-size:10px">1:1</button>
+
+      <div class="w-px h-4 bg-[var(--border)]"></div>
+
+      <span class="text-[10px] text-gray-500" x-show="segments.length">
+        <span x-text="segments.length"></span> 段 ·
+        保留 <span class="text-emerald-400" x-text="stats.total ? Math.round(100*stats.kept/stats.total) + '%' : '—'"></span> ·
+        <span class="text-amber-400" x-text="stats.hi"></span> <span class="coin" style="width:10px;height:10px;vertical-align:-1px"></span>
+      </span>
+
+      <div class="flex-1"></div>
+
+      <span class="text-[10px] text-gray-600" x-show="waveZoom > 1">Ctrl+滚轮缩放 · 拖拽滚动</span>
+      <span class="text-[10px] text-gray-600" x-show="waveLoading">波形生成中…</span>
+    </div>
+
+    <!-- Canvas scroll area -->
+    <div class="waveform-scroll" style="height: 152px"
+         x-ref="waveScroll"
+         @click="onWaveClick($event)"
+         @wheel="onWaveWheel($event)">
+
+      <!-- Empty state: no transcript -->
+      <div x-show="!segments.length && !waveLoading" class="flex items-center justify-center h-full text-gray-600 text-xs">
+        <template x-if="serverMode && !videoPath">
+          <span>选择视频后开始</span>
+        </template>
+        <template x-if="serverMode && videoPath && !segments.length">
+          <button class="btn-primary rounded-lg px-5 py-2.5 text-sm" @click="openTranscribeModal()">
+            ▶ 开始转录
+          </button>
+        </template>
+        <template x-if="!serverMode && !segments.length">
+          <label class="cursor-pointer hover:text-gray-400 transition">
+            📄 加载转录稿 JSON
+            <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)" class="hidden">
+          </label>
+        </template>
+      </div>
+
+      <!-- Waveform canvas + playhead -->
+      <div x-show="segments.length" :style="`width:${waveWidth}px; height:152px; position:relative`">
+        <canvas x-ref="waveCanvas" style="display:block"></canvas>
+        <!-- Playhead -->
+        <div class="waveform-playhead"
+             :style="`left:${duration ? (currentTime / duration) * waveWidth : 0}px`">
+          <span class="playhead-time" x-text="fmtTs(currentTime)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================= BOTTOM: SIDEBAR + SEGMENTS ========================= -->
+  <div class="flex-1 flex overflow-hidden">
+
+    <!-- ========= SIDEBAR ========= -->
+    <aside class="w-56 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--panel)] p-3 space-y-3">
+
+      <!-- Video info (server mode) -->
+      <section x-show="serverMode && videoPath">
+        <div class="flex items-center justify-between mb-1">
+          <div class="text-[10px] uppercase tracking-wider text-gray-600">视频</div>
+          <button @click="pickVideo()" :disabled="picking"
+                  class="text-[10px] text-gray-500 hover:text-violet-400">
             <span x-show="!picking">📂 换</span>
             <span x-show="picking">…</span>
           </button>
         </div>
-
-        <!-- Has video -->
-        <div x-show="videoPath" class="flex items-start gap-2">
-          <div class="text-xl">🎬</div>
-          <div class="min-w-0 flex-1">
-            <div class="text-sm font-medium truncate" x-text="videoName || '未加载'"></div>
-            <div class="text-[11px] text-gray-500 truncate" x-text="videoPath || ''"></div>
-            <div class="text-[11px] text-gray-500 mt-0.5" x-text="duration ? fmtTs(duration) : ''"></div>
-          </div>
-        </div>
-
-        <!-- No video: big upload button -->
-        <div x-show="!videoPath" class="text-center py-2">
-          <button @click="pickVideo()" :disabled="picking"
-                  class="btn-primary rounded-lg px-5 py-3 text-sm w-full">
-            <span x-show="!picking">📂 选择视频文件</span>
-            <span x-show="picking">⏳ 等待选择…</span>
-          </button>
-          <div class="text-[11px] text-gray-500 mt-2 leading-relaxed">
-            支持 mp4 / mov / m4v / mkv / avi / webm<br>
-            视频留在原位置，不会被复制
-          </div>
-        </div>
+        <div class="text-xs truncate text-gray-300" x-text="videoName"></div>
+        <div class="text-[10px] text-gray-600 mt-0.5" x-text="duration ? fmtTs(duration) : ''"></div>
       </section>
 
-      <!-- File inputs (only in file:// mode) -->
-      <section class="panel rounded-xl p-4 space-y-3" x-show="!serverMode">
-        <div class="text-[11px] uppercase tracking-wider text-gray-500">源文件</div>
-        <label class="block">
-          <span class="text-xs text-gray-400">视频</span>
-          <input type="file" accept="video/*" @change="loadVideoLocal($event)"
-                 class="mt-1 block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-violet-600/20 file:text-violet-300 hover:file:bg-violet-600/30 cursor-pointer">
-        </label>
-        <label class="block">
-          <span class="text-xs text-gray-400">转录稿</span>
-          <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)"
-                 class="mt-1 block w-full text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:bg-pink-600/20 file:text-pink-300 hover:file:bg-pink-600/30 cursor-pointer">
-        </label>
-      </section>
-
-      <!-- stats (always visible; empty hints when no transcript) -->
-      <section class="panel rounded-xl p-4 space-y-3">
-        <div class="text-[11px] uppercase tracking-wider text-gray-500">统计</div>
-        <div class="grid grid-cols-2 gap-2.5 text-sm">
-          <div class="panel-2 rounded-lg p-2.5">
-            <div class="text-[10px] text-gray-500">总时长</div>
-            <div class="font-mono tabular-nums text-base" x-text="segments.length ? fmtTs(stats.total) : '—'"></div>
+      <!-- Stats -->
+      <section>
+        <div class="text-[10px] uppercase tracking-wider text-gray-600 mb-1.5">统计</div>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <div class="panel-2 rounded-md p-2">
+            <div class="text-[9px] text-gray-600">总时长</div>
+            <div class="font-mono tabular-nums" x-text="segments.length ? fmtTs(stats.total) : '—'"></div>
           </div>
-          <div class="panel-2 rounded-lg p-2.5">
-            <div class="text-[10px] text-gray-500">保留</div>
-            <div class="font-mono tabular-nums text-base text-emerald-400" x-text="segments.length ? fmtTs(stats.kept) : '—'"></div>
+          <div class="panel-2 rounded-md p-2">
+            <div class="text-[9px] text-gray-600">保留</div>
+            <div class="font-mono tabular-nums text-emerald-400" x-text="segments.length ? fmtTs(stats.kept) : '—'"></div>
           </div>
-          <div class="panel-2 rounded-lg p-2.5">
-            <div class="text-[10px] text-gray-500">删除</div>
-            <div class="font-mono tabular-nums text-base text-red-400" x-text="segments.length ? fmtTs(stats.cutTime) : '—'"></div>
+          <div class="panel-2 rounded-md p-2">
+            <div class="text-[9px] text-gray-600">删除</div>
+            <div class="font-mono tabular-nums text-red-400" x-text="segments.length ? fmtTs(stats.cutTime) : '—'"></div>
           </div>
-          <div class="panel-2 rounded-lg p-2.5">
-            <div class="text-[10px] text-gray-500">压缩率</div>
-            <div class="font-mono tabular-nums text-base" x-text="stats.total ? Math.round(100*stats.kept/stats.total) + '%' : '—'"></div>
+          <div class="panel-2 rounded-md p-2">
+            <div class="text-[9px] text-gray-600">压缩率</div>
+            <div class="font-mono tabular-nums" x-text="stats.total ? Math.round(100*stats.kept/stats.total) + '%' : '—'"></div>
           </div>
         </div>
-        <div class="panel-2 rounded-lg px-2.5 py-2 flex items-center justify-center gap-2 text-sm">
+        <div class="panel-2 rounded-md px-2 py-1.5 mt-1.5 flex items-center justify-center gap-1.5 text-xs">
           <span class="text-amber-400 font-semibold" x-text="stats.hi"></span>
           <span class="coin lg"></span>
-          <span class="text-gray-500 text-xs">金句</span>
+          <span class="text-gray-500 text-[10px]">金句</span>
         </div>
       </section>
 
-      <!-- speakers -->
-      <section class="panel rounded-xl p-4 space-y-2">
-        <div class="text-[11px] uppercase tracking-wider text-gray-500">说话人（点击重命名）</div>
+      <!-- Speakers -->
+      <section>
+        <div class="text-[10px] uppercase tracking-wider text-gray-600 mb-1.5">说话人</div>
         <template x-if="!speakers.length">
-          <div class="text-xs text-gray-500 py-1">加载转录稿后显示</div>
+          <div class="text-[10px] text-gray-600 py-1">加载转录稿后显示</div>
         </template>
         <template x-for="sp in speakers" :key="sp">
-          <div class="flex items-center gap-2">
-            <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
+          <div class="flex items-center gap-1.5 mb-1">
+            <span class="w-2 h-2 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
             <input type="text" :value="spkName(sp)"
                    @change="renameSpeaker(sp, $event.target.value)"
-                   class="bg-transparent text-sm flex-1 rounded px-1.5 py-1 hover:bg-white/5 focus:bg-white/10 focus:outline-none">
-            <span class="text-[10px] text-gray-500 font-mono" x-text="sp"></span>
+                   class="bg-transparent text-xs flex-1 rounded px-1 py-0.5 hover:bg-white/5 focus:bg-white/10 focus:outline-none min-w-0">
+            <span class="text-[9px] text-gray-600 font-mono shrink-0" x-text="sp"></span>
           </div>
         </template>
       </section>
 
-      <!-- filter -->
-      <section class="panel rounded-xl p-4 space-y-2">
-        <div class="text-[11px] uppercase tracking-wider text-gray-500">筛选</div>
-        <div class="flex flex-wrap gap-1.5 text-xs" :class="!segments.length && 'opacity-40 pointer-events-none'">
-          <button @click="filter = 'all'" :class="filter==='all' ? 'bg-white/10 text-white' : 'text-gray-400'"
-                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">全部</button>
-          <button @click="filter = 'unmarked'" :class="filter==='unmarked' ? 'bg-white/10 text-white' : 'text-gray-400'"
-                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">未标注</button>
-          <button @click="filter = 'cut'" :class="filter==='cut' ? 'bg-red-500/20 text-red-300' : 'text-gray-400'"
-                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white">💣 删除</button>
-          <button @click="filter = 'highlight'" :class="filter==='highlight' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-400'"
-                  class="px-2.5 py-1 rounded-md panel-2 hover:text-white inline-flex items-center gap-1"><span class="coin"></span> 金句</button>
+      <!-- Filter -->
+      <section>
+        <div class="text-[10px] uppercase tracking-wider text-gray-600 mb-1.5">筛选</div>
+        <div class="flex flex-wrap gap-1 text-[10px]" :class="!segments.length && 'opacity-40 pointer-events-none'">
+          <button @click="filter = 'all'" :class="filter==='all' ? 'bg-white/10 text-white' : 'text-gray-500'"
+                  class="px-2 py-0.5 rounded panel-2 hover:text-white">全部</button>
+          <button @click="filter = 'unmarked'" :class="filter==='unmarked' ? 'bg-white/10 text-white' : 'text-gray-500'"
+                  class="px-2 py-0.5 rounded panel-2 hover:text-white">未标注</button>
+          <button @click="filter = 'cut'" :class="filter==='cut' ? 'bg-red-500/20 text-red-300' : 'text-gray-500'"
+                  class="px-2 py-0.5 rounded panel-2 hover:text-white">💣 删除</button>
+          <button @click="filter = 'highlight'" :class="filter==='highlight' ? 'bg-amber-500/20 text-amber-300' : 'text-gray-500'"
+                  class="px-2 py-0.5 rounded panel-2 hover:text-white inline-flex items-center gap-0.5"><span class="coin" style="width:10px;height:10px"></span> 金句</button>
         </div>
-        <input type="text" x-model="search" placeholder="搜索文本…"
+        <input type="text" x-model="search" placeholder="搜索…"
                :disabled="!segments.length"
-               class="w-full mt-2 panel-2 rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:border-violet-500 disabled:opacity-40">
+               class="w-full mt-1.5 panel-2 rounded px-2 py-1 text-xs focus:outline-none focus:border-violet-500 disabled:opacity-40">
       </section>
 
-      <!-- suggestions status -->
-      <section class="panel rounded-xl p-4 space-y-2" x-show="hasSuggestions">
-        <div class="text-[11px] uppercase tracking-wider text-gray-500">🤖 AI 建议已应用</div>
-        <div class="text-xs text-gray-400">
-          <span x-text="suggestionStats.cut"></span> 段建议删除 ·
-          <span x-text="suggestionStats.hi"></span> 段建议金句
+      <!-- AI Suggestions status -->
+      <section x-show="hasSuggestions">
+        <div class="text-[10px] uppercase tracking-wider text-gray-600 mb-1">🤖 AI 建议</div>
+        <div class="text-[10px] text-gray-400">
+          <span x-text="suggestionStats.cut"></span> 段删除 ·
+          <span x-text="suggestionStats.hi"></span> 段金句
         </div>
-        <div class="flex gap-2">
-          <button @click="openSuggestionModal()" class="flex-1 text-xs panel-2 rounded-md px-2 py-1.5 hover:text-white">调整参数</button>
-          <button @click="clearSuggestions()" class="flex-1 text-xs panel-2 rounded-md px-2 py-1.5 hover:text-white hover:border-red-500/50">撤销</button>
+        <div class="flex gap-1 mt-1.5">
+          <button @click="openSuggestionModal()" class="flex-1 text-[10px] panel-2 rounded px-2 py-1 hover:text-white">调整</button>
+          <button @click="clearSuggestions()" class="flex-1 text-[10px] panel-2 rounded px-2 py-1 hover:text-white hover:border-red-500/50">撤销</button>
         </div>
+      </section>
+
+      <!-- Shortcuts hint -->
+      <section class="text-[10px] text-gray-600 leading-relaxed pt-2 border-t border-[var(--border)]">
+        <div><kbd>Space</kbd> 播放 · <kbd>J</kbd>/<kbd>L</kbd> ±5s</div>
+        <div><kbd>↑</kbd><kbd>↓</kbd> 切段 · <kbd>0</kbd> 段首</div>
+        <div><kbd>X</kbd> 删除 · <kbd>H</kbd> 金句 · <kbd>Z</kbd> 清除</div>
+        <div><kbd>P</kbd> 原片/成片 · <kbd>+</kbd><kbd>-</kbd> 缩放</div>
       </section>
     </aside>
 
-    <!-- ========== CENTER TRANSCRIPT ========== -->
-    <section class="col-span-6">
-
-      <!-- Empty state: big transcribe button -->
-      <div class="panel rounded-xl p-10 text-center" x-show="!segments.length && serverMode">
-        <div class="text-5xl mb-4">🎙️</div>
-        <div class="text-lg font-semibold mb-1">还没有转录稿</div>
-        <div class="text-sm text-gray-500 mb-6">点下面这个按钮，让 WhisperX 把视频变成带说话人的文字稿</div>
-        <button class="btn-primary px-6 py-3 rounded-lg text-base" @click="openTranscribeModal()">
-          ▶ 开始转录
-        </button>
-        <div class="text-xs text-gray-500 mt-4">4 小时视频大约需要 30–90 分钟</div>
-
-        <div class="mt-8 pt-6 border-t border-[var(--border)] text-xs text-gray-500">
-          <div class="mb-2">已有 transcript.json？</div>
-          <label class="inline-flex items-center gap-2 panel-2 rounded-md px-3 py-1.5 cursor-pointer hover:border-violet-500">
-            <span>📂 加载本地转录稿</span>
-            <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)" class="hidden">
-          </label>
-        </div>
+    <!-- ========= SEGMENT LIST ========= -->
+    <div class="flex-1 overflow-y-auto" id="segList">
+      <!-- Empty state -->
+      <div x-show="!segments.length" class="flex flex-col items-center justify-center h-full text-gray-600">
+        <div class="text-3xl mb-3">🎙️</div>
+        <template x-if="serverMode && videoPath">
+          <div class="text-center">
+            <div class="text-sm mb-2">还没有转录稿</div>
+            <button class="btn-primary px-5 py-2 rounded-lg text-sm" @click="openTranscribeModal()">▶ 开始转录</button>
+            <div class="text-[10px] text-gray-600 mt-3">或拖入已有 transcript.json</div>
+          </div>
+        </template>
+        <template x-if="!serverMode">
+          <div class="text-center text-xs">
+            <label class="inline-flex items-center gap-1.5 panel-2 rounded-md px-3 py-1.5 cursor-pointer hover:border-violet-500">
+              📂 加载转录稿 JSON
+              <input type="file" accept="application/json,.json" @change="loadTranscriptLocal($event)" class="hidden">
+            </label>
+          </div>
+        </template>
       </div>
 
-      <div class="panel rounded-xl overflow-hidden" x-show="segments.length">
-        <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
-          <div class="text-sm">
-            <span class="font-semibold" x-text="segments.length"></span>
-            <span class="text-gray-500">段</span>
-            <template x-if="filteredSegments.length !== segments.length">
-              <span class="text-gray-500"> · 筛选后 <span x-text="filteredSegments.length"></span></span>
-            </template>
-          </div>
-          <div class="text-xs text-gray-500">点击段落跳转到视频时间</div>
-        </div>
-
-        <div class="h-[calc(100vh-210px)] overflow-y-auto fade-mask" id="segList">
-          <template x-for="s in filteredSegments" :key="s.id">
-            <div class="seg relative border-l-2 border-transparent pl-4 pr-3 py-3 flex gap-3 cursor-pointer"
-                 :class="{
-                   'active': s.id === activeId,
-                   'cut':   s.tags.includes('cut'),
-                   'has-hi': s.tags.includes('highlight'),
-                   'suggested': s.sourceIsAI,
-                 }"
-                 :data-id="s.id"
-                 @click="seekToSegment(s)">
-              <div class="w-20 shrink-0 text-[11px] leading-snug">
-                <div class="font-mono tabular-nums text-gray-400" x-text="fmtTs(s.start)"></div>
-                <div class="font-semibold mt-1" :style="`color:${speakerColor(s.speaker)}`" x-text="spkName(s.speaker)"></div>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="txt text-[15px] leading-relaxed break-words" x-text="s.text"></div>
-              </div>
-              <div class="shrink-0 flex flex-col gap-1.5" @click.stop>
-                <button class="tag-btn cut"  :class="{on: s.tags.includes('cut')}"       @click="toggle(s,'cut')"       title="删除（X）">💣</button>
-                <button class="tag-btn hi"   :class="{on: s.tags.includes('highlight')}" @click="toggle(s,'highlight')" title="金句（H）"><span class="coin"></span></button>
-              </div>
-            </div>
-          </template>
-
-          <template x-if="segments.length && !filteredSegments.length">
-            <div class="p-12 text-center text-gray-500 text-sm">当前筛选下没有段落</div>
+      <!-- Segment header -->
+      <div x-show="segments.length" class="sticky top-0 z-10 flex items-center justify-between px-4 py-2 bg-[var(--panel)] border-b border-[var(--border)]">
+        <div class="text-xs">
+          <span class="font-semibold" x-text="segments.length"></span>
+          <span class="text-gray-500">段</span>
+          <template x-if="filteredSegments.length !== segments.length">
+            <span class="text-gray-500"> · 筛选 <span x-text="filteredSegments.length"></span></span>
           </template>
         </div>
+        <div class="text-[10px] text-gray-600">点击段落跳转</div>
       </div>
 
-      <!-- File-mode empty state -->
-      <div class="panel rounded-xl p-10 text-center" x-show="!segments.length && !serverMode">
-        <div class="text-4xl mb-3">📄</div>
-        <div class="text-sm text-gray-400">左侧选择转录稿 JSON 文件即可开始</div>
-        <div class="text-xs text-gray-500 mt-2">想要完整体验（一键转录/导出视频），请用<br><code class="text-[11px]">bash scripts/start.sh &lt;video&gt;</code> 启动</div>
-      </div>
-    </section>
-
-    <!-- ========== RIGHT VIDEO ========== -->
-    <aside class="col-span-3">
-      <div class="panel rounded-xl overflow-hidden sticky top-[150px]">
-        <div class="relative aspect-video bg-black">
-          <video x-ref="video" class="w-full h-full object-contain bg-black"
-                 controls preload="metadata"
-                 @timeupdate="onTimeUpdate"
-                 @loadedmetadata="onVideoLoaded"></video>
-          <!-- Preview mode badge -->
-          <div x-show="previewMode" class="absolute top-2 left-2 text-[10px] font-bold bg-black/70 text-amber-400 px-2 py-1 rounded border border-amber-500/40">
-            🎬 预览成片
+      <!-- Segments -->
+      <template x-for="s in filteredSegments" :key="s.id">
+        <div class="seg relative border-l-2 border-transparent pl-3 pr-3 py-2.5 flex gap-2.5 cursor-pointer"
+             :class="{
+               'active': s.id === activeId,
+               'cut':   s.tags.includes('cut'),
+               'has-hi': s.tags.includes('highlight'),
+               'suggested': s.sourceIsAI,
+             }"
+             :data-id="s.id"
+             @click="seekToSegment(s)">
+          <div class="w-16 shrink-0 text-[10px] leading-snug">
+            <div class="font-mono tabular-nums text-gray-400" x-text="fmtTs(s.start)"></div>
+            <div class="font-semibold mt-0.5" :style="`color:${speakerColor(s.speaker)}`" x-text="spkName(s.speaker)"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="txt text-sm leading-relaxed break-words" x-text="s.text"></div>
+          </div>
+          <div class="shrink-0 flex flex-col gap-1" @click.stop>
+            <button class="tag-btn cut"  :class="{on: s.tags.includes('cut')}"       @click="toggle(s,'cut')"       title="删除（X）">💣</button>
+            <button class="tag-btn hi"   :class="{on: s.tags.includes('highlight')}" @click="toggle(s,'highlight')" title="金句（H）"><span class="coin"></span></button>
           </div>
         </div>
+      </template>
 
-        <div class="px-4 py-3 border-t border-[var(--border)] space-y-3">
-          <!-- Preview mode toggle -->
-          <div class="flex items-center justify-between gap-2">
-            <div class="text-xs text-gray-400">播放模式</div>
-            <div class="pill-toggle">
-              <button :class="!previewMode && 'on'" @click="previewMode = false" title="播放原始视频">原片</button>
-              <button :class="previewMode && 'on'" @click="previewMode = true" title="自动跳过删除段">✂ 成片</button>
-            </div>
-          </div>
+      <template x-if="segments.length && !filteredSegments.length">
+        <div class="p-8 text-center text-gray-600 text-sm">当前筛选下没有段落</div>
+      </template>
+    </div>
+  </div>
 
-          <div class="flex items-center gap-2 text-xs">
-            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="jumpBy(-5)" title="J">-5s</button>
-            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="togglePlay()" title="Space">
-              <span x-text="playing ? '⏸' : '▶'"></span>
-            </button>
-            <button class="panel-2 rounded px-2 py-1 hover:border-violet-500" @click="jumpBy(5)" title="L">+5s</button>
-            <div class="flex-1"></div>
-            <select class="bg-transparent text-xs text-gray-400 focus:outline-none" x-model.number="playbackRate" @change="$refs.video.playbackRate=playbackRate">
-              <option value="0.5">0.5×</option>
-              <option value="1">1×</option>
-              <option value="1.25">1.25×</option>
-              <option value="1.5">1.5×</option>
-              <option value="2">2×</option>
-            </select>
-          </div>
-
-          <div class="text-xs text-gray-400 leading-relaxed">
-            <div class="flex justify-between">
-              <span x-text="previewMode ? '成片时间' : '原片时间'"></span>
-              <span class="font-mono tabular-nums" x-text="fmtTs(currentTime)"></span>
-            </div>
-            <div class="mt-1 font-semibold" x-show="activeSeg" :style="`color:${activeSeg ? speakerColor(activeSeg.speaker) : ''}`" x-text="activeSeg ? spkName(activeSeg.speaker) : ''"></div>
-            <div class="mt-0.5 line-clamp-3" x-text="activeSeg?.text || '—'"></div>
-          </div>
-
-          <div class="pt-2 border-t border-[var(--border)] space-y-1.5 text-[11px] text-gray-500">
-            <div><kbd>Space</kbd> 播放/暂停 · <kbd>J</kbd>/<kbd>L</kbd> ±5s · <kbd>↑</kbd><kbd>↓</kbd> 切段</div>
-            <div class="flex items-center gap-1 flex-wrap"><kbd>X</kbd> <span class="text-red-400">💣 删除</span> · <kbd>H</kbd> <span class="inline-flex items-center gap-1 text-amber-400"><span class="coin"></span> 金句</span></div>
-            <div><kbd>Z</kbd> 清空标签 · <kbd>P</kbd> 原片/成片</div>
-          </div>
-
-          <!-- Export format selector -->
-          <div class="pt-2 border-t border-[var(--border)] flex items-center justify-between gap-2 text-xs">
-            <span class="text-gray-400">导出格式</span>
-            <div class="pill-toggle">
-              <button :class="exportFormat==='mp4' && 'on'" @click="exportFormat='mp4'" title="通用 / 小红书">MP4</button>
-              <button :class="exportFormat==='mov' && 'on'" @click="exportFormat='mov'" title="QuickTime / 剪映">MOV</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </aside>
-  </main>
-
-  <!-- =========================== TRANSCRIBE MODAL =========================== -->
+  <!-- ========================= TRANSCRIBE MODAL ========================= -->
   <div class="modal-wrap" x-show="showTranscribeModal" x-transition.opacity
        @click.self="showTranscribeModal = false" @keydown.escape.window="showTranscribeModal = false">
     <div class="panel rounded-2xl p-6 w-full max-w-md">
@@ -686,15 +595,7 @@
         <div class="text-lg font-semibold">▶ 开始转录</div>
         <button class="text-gray-500 hover:text-white" @click="showTranscribeModal = false">✕</button>
       </div>
-
       <div class="space-y-4 text-sm">
-        <div>
-          <label class="block text-xs text-gray-400 mb-1.5">说话人数（已知的话务必填，影响准确率）</label>
-          <input type="number" min="1" max="10" x-model.number="transcribeOpts.numSpeakers"
-                 class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
-          <div class="text-[11px] text-gray-500 mt-1">留空让 AI 自动猜测（不推荐，经常把沉默分成多个人）</div>
-        </div>
-
         <div>
           <label class="block text-xs text-gray-400 mb-1.5">语言</label>
           <select x-model="transcribeOpts.language" class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
@@ -703,17 +604,17 @@
             <option value="auto">自动识别</option>
           </select>
         </div>
-
         <div>
           <label class="block text-xs text-gray-400 mb-1.5">模型</label>
           <select x-model="transcribeOpts.model" class="w-full panel-2 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-violet-500">
             <option value="large-v3">large-v3（最准，中文推荐）</option>
-            <option value="medium">medium（快 3 倍，质量尚可）</option>
-            <option value="small">small（最快，英文勉强够用）</option>
+            <option value="small">small（快，精度尚可）</option>
           </select>
         </div>
+        <div class="panel-2 rounded-md p-2.5 text-[11px] text-gray-400">
+          说话人需在编辑器里手动标注。转录后所有段落默认标为 SPEAKER_00，点击左侧「说话人」重命名即可。
+        </div>
       </div>
-
       <div class="mt-6 flex gap-2">
         <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="showTranscribeModal = false">取消</button>
         <button class="flex-1 btn-primary rounded-md py-2 text-sm" @click="startTranscribe()">开始转录</button>
@@ -721,7 +622,7 @@
     </div>
   </div>
 
-  <!-- =========================== SUGGESTION MODAL =========================== -->
+  <!-- ========================= SUGGESTION MODAL ========================= -->
   <div class="modal-wrap" x-show="showSuggestModal" x-transition.opacity
        @click.self="showSuggestModal = false" @keydown.escape.window="showSuggestModal = false">
     <div class="panel rounded-2xl p-6 w-full max-w-lg">
@@ -729,47 +630,38 @@
         <div class="text-lg font-semibold">✨ 智能建议</div>
         <button class="text-gray-500 hover:text-white" @click="showSuggestModal = false">✕</button>
       </div>
-      <div class="text-xs text-gray-500 mb-5">AI 会基于长度、填充词、说话人、关键词给每段打分，帮你选出哪些该删、哪些是金句。你可以再手动微调。</div>
-
+      <div class="text-xs text-gray-500 mb-5">AI 按长度、填充词、说话人、关键词打分，帮你选出删除和金句。</div>
       <div class="space-y-5 text-sm">
-        <!-- target compression -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-xs text-gray-400">目标保留时长</label>
+            <label class="text-xs text-gray-400">目标保留</label>
             <span class="text-sm font-mono tabular-nums text-white" x-text="Math.round(suggestOpts.targetRatio * 100) + '%'"></span>
           </div>
           <input type="range" min="0.3" max="0.95" step="0.05" x-model.number="suggestOpts.targetRatio" class="w-full">
-          <div class="flex justify-between text-[10px] text-gray-600 mt-1">
-            <span>大刀阔斧</span><span>轻度精修</span>
-          </div>
+          <div class="flex justify-between text-[10px] text-gray-600 mt-1"><span>大刀阔斧</span><span>轻度精修</span></div>
         </div>
-
-        <!-- speaker weights -->
         <div x-show="speakers.length">
-          <div class="text-xs text-gray-400 mb-2">说话人权重（越高越倾向保留）</div>
+          <div class="text-xs text-gray-400 mb-2">说话人权重</div>
           <template x-for="sp in speakers" :key="'weight-'+sp">
-            <div class="flex items-center gap-3 mb-2">
-              <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
-              <span class="w-28 text-sm truncate" x-text="spkName(sp)"></span>
+            <div class="flex items-center gap-2 mb-2">
+              <span class="w-2 h-2 rounded-full shrink-0" :style="`background:${speakerColor(sp)}`"></span>
+              <span class="w-24 text-xs truncate" x-text="spkName(sp)"></span>
               <input type="range" min="0" max="1.5" step="0.1"
                      :value="suggestOpts.speakerWeights[sp] ?? 1.0"
                      @input="suggestOpts.speakerWeights[sp] = parseFloat($event.target.value)"
                      class="flex-1">
-              <span class="w-10 text-right font-mono tabular-nums text-sm" x-text="(suggestOpts.speakerWeights[sp] ?? 1.0).toFixed(1)"></span>
+              <span class="w-8 text-right font-mono tabular-nums text-xs" x-text="(suggestOpts.speakerWeights[sp] ?? 1.0).toFixed(1)"></span>
             </div>
           </template>
         </div>
-
-        <!-- strip fillers -->
         <label class="flex items-start gap-2 text-sm cursor-pointer">
           <input type="checkbox" x-model="suggestOpts.stripFillers" class="mt-0.5 accent-violet-500">
           <div>
             <div>自动删除超短填充词</div>
-            <div class="text-[11px] text-gray-500">&lt;2.5 秒 且只含"嗯/啊/对/好"等字的段</div>
+            <div class="text-[11px] text-gray-500">&lt;2.5秒 且只含"嗯/啊/对/好"的段</div>
           </div>
         </label>
       </div>
-
       <div class="mt-6 flex gap-2">
         <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="showSuggestModal = false">取消</button>
         <button class="flex-1 btn-primary rounded-md py-2 text-sm" @click="runSuggest()" :disabled="suggestBusy">
@@ -780,37 +672,29 @@
     </div>
   </div>
 
-  <!-- =========================== JOB PROGRESS MODAL =========================== -->
+  <!-- ========================= JOB PROGRESS MODAL ========================= -->
   <div class="modal-wrap" x-show="job" x-transition.opacity>
     <div class="panel rounded-2xl p-6 w-full max-w-lg">
       <div class="flex items-center justify-between mb-4">
-        <div class="text-lg font-semibold" x-text="job?.type === 'transcribe' ? '🎙️ 正在转录…' : '💾 正在导出视频…'"></div>
+        <div class="text-lg font-semibold" x-text="job?.type === 'transcribe' ? '🎙️ 正在转录…' : '💾 正在导出…'"></div>
         <span class="text-xs text-gray-500 font-mono" x-text="job && ('已用 ' + fmtElapsed(job.elapsed))"></span>
       </div>
-
-      <!-- Progress bar -->
       <div class="h-2 bg-[var(--panel-2)] rounded-full overflow-hidden mb-2">
         <div class="h-full rounded-full transition-all"
              :class="job?.status === 'error' ? 'bg-red-500' : 'shimmer'"
              :style="`width: ${Math.max(5, (job?.progress||0) * 100)}%`"></div>
       </div>
       <div class="text-xs text-gray-400 mb-4" x-text="job ? Math.round((job.progress||0) * 100) + '%' : ''"></div>
-
-      <!-- Log tail -->
       <pre class="panel-2 rounded-md p-3 text-[11px] font-mono text-gray-400 max-h-48 overflow-y-auto whitespace-pre-wrap" x-text="job?.stdout_tail || ''"></pre>
-
-      <div class="mt-4 text-xs text-gray-500" x-show="job?.type === 'transcribe'">
-        首次运行会下载 ~3GB 模型，请耐心等待。不要关闭这个窗口。
-      </div>
+      <div class="mt-4 text-xs text-gray-500" x-show="job?.type === 'transcribe'">首次运行会下载 ~3GB 模型，请耐心等待。</div>
       <div class="mt-4 text-xs text-red-400" x-show="job?.status === 'error'" x-text="'错误：' + (job?.error || '未知')"></div>
-
       <div class="mt-5 flex gap-2" x-show="job?.status === 'done' || job?.status === 'error'">
         <button class="flex-1 panel-2 rounded-md py-2 text-sm" @click="job = null">关闭</button>
       </div>
     </div>
   </div>
 
-  <!-- =========================== SHORTCUTS MODAL =========================== -->
+  <!-- ========================= SHORTCUTS MODAL ========================= -->
   <div class="modal-wrap" x-show="showShortcuts" x-transition.opacity
        @click.self="showShortcuts=false" @keydown.escape.window="showShortcuts=false">
     <div class="panel rounded-2xl p-6 w-full max-w-md">
@@ -818,18 +702,16 @@
         <div class="text-lg font-semibold">快捷键</div>
         <button class="text-gray-500 hover:text-white" @click="showShortcuts=false">✕</button>
       </div>
-      <div class="grid grid-cols-2 gap-y-2.5 text-sm">
+      <div class="grid grid-cols-2 gap-y-2 text-sm">
         <div class="text-gray-400">播放 / 暂停</div><div><kbd>Space</kbd></div>
         <div class="text-gray-400">后退 / 前进 5s</div><div><kbd>J</kbd> / <kbd>L</kbd></div>
         <div class="text-gray-400">上一段 / 下一段</div><div><kbd>↑</kbd> / <kbd>↓</kbd></div>
         <div class="text-gray-400">跳到当前段开头</div><div><kbd>0</kbd></div>
         <div class="text-red-400">💣 删除当前段</div><div><kbd>X</kbd></div>
         <div class="inline-flex items-center gap-1 text-amber-400"><span class="coin"></span> 标为金句</div><div><kbd>H</kbd></div>
-        <div class="text-gray-400">清空当前段标签</div><div><kbd>Z</kbd></div>
-        <div class="text-gray-400">切换 原片 / ✂ 成片</div><div><kbd>P</kbd></div>
-      </div>
-      <div class="mt-4 pt-3 border-t border-[var(--border)] text-xs text-gray-500 leading-relaxed">
-        开启 <span class="text-violet-400">🤖 AI 建议</span> 后，加载转录稿会自动打上删除和金句标记。你可以逐个点按钮覆盖，也可以关掉开关进入纯手动模式。
+        <div class="text-gray-400">清空标签</div><div><kbd>Z</kbd></div>
+        <div class="text-gray-400">原片 / 成片</div><div><kbd>P</kbd></div>
+        <div class="text-gray-400">放大 / 缩小波形</div><div><kbd>+</kbd> / <kbd>-</kbd></div>
       </div>
     </div>
   </div>
@@ -854,7 +736,7 @@
       videoPath: null,
       videoName: null,
 
-      segments: [],           // [{ id, start, end, speaker, text, tags:[], sourceIsAI? }]
+      segments: [],
       speakers: [],
       speakerNames: {},
       duration: 0,
@@ -868,30 +750,57 @@
       filter: 'all',
       search: '',
 
-      // modals
       showShortcuts: false,
       showTranscribeModal: false,
       showSuggestModal: false,
 
-      // suggestion state
-      aiAutoMode: true,            // when ON, suggestions run automatically after transcript loads
+      aiAutoMode: true,
       hasSuggestions: false,
       suggestionStats: { cut: 0, hi: 0 },
       suggestOpts: { targetRatio: 0.7, stripFillers: true, speakerWeights: {} },
       suggestBusy: false,
 
-      // transcribe
-      transcribeOpts: { numSpeakers: null, language: 'zh', model: 'large-v3' },
-
-      // export
-      exportFormat: 'mp4',         // 'mp4' or 'mov'
-
-      // video picker
+      transcribeOpts: { backend: 'mlx', numSpeakers: null, language: 'zh', model: 'large-v3' },
+      exportFormat: 'mp4',
       picking: false,
-
-      // job polling
       job: null,
       _pollTimer: null,
+
+      // ============ MEDIA TYPE ============
+      isAudio: false,
+      useAudioFallback: false,
+
+      // ============ WAVEFORM STATE ============
+      waveformData: null,
+      waveZoom: 1,
+      waveLoading: false,
+      waveContainerW: 800,
+
+      get waveWidth() {
+        return Math.round(this.waveContainerW * this.waveZoom);
+      },
+
+      // Active media element (video or audio fallback)
+      get mediaEl() {
+        return this.useAudioFallback ? this.$refs.audioFallback : this.$refs.video;
+      },
+
+      _detectAudio(name) {
+        const ext = (name || '').split('.').pop().toLowerCase();
+        this.isAudio = ['mp3','m4a','wav','flac','ogg','aac','wma','opus'].includes(ext);
+      },
+
+      onVideoError() {
+        // <video> can't play this file — switch to <audio> fallback
+        if (this.isAudio && !this.useAudioFallback) {
+          this.useAudioFallback = true;
+          const src = this.$refs.video.src;
+          this.$refs.video.removeAttribute('src');
+          this.$nextTick(() => {
+            if (this.$refs.audioFallback) this.$refs.audioFallback.src = src;
+          });
+        }
+      },
 
       // ============ INIT ============
       async init() {
@@ -902,13 +811,29 @@
           this.handleKey(e);
         });
 
+        // Track waveform container width
+        this.$nextTick(() => {
+          const ws = this.$refs.waveScroll;
+          if (ws) {
+            this.waveContainerW = ws.clientWidth;
+            const ro = new ResizeObserver(() => {
+              this.waveContainerW = ws.clientWidth;
+              this.drawWaveform();
+            });
+            ro.observe(ws);
+          }
+        });
+
         // Detect server mode
         try {
           const state = await api('/api/state');
           this.serverMode = true;
           this.videoPath = state.video_path;
           this.videoName = state.video_name;
-          if (state.video_url) this.$refs.video.src = state.video_url;
+          this._detectAudio(state.video_name);
+          if (state.video_url) {
+            this.$refs.video.src = state.video_url;
+          }
           if (state.has_transcript) {
             await this.loadTranscriptFromUrl(state.transcript_url);
           }
@@ -917,23 +842,21 @@
         }
       },
 
-      // ============ LOCAL (file://) file loaders ============
+      // ============ LOCAL FILE LOADERS ============
       loadVideoLocal(e) {
         const f = e.target.files?.[0];
         if (!f) return;
-        const url = URL.createObjectURL(f);
-        this.$refs.video.src = url;
+        this._detectAudio(f.name);
+        this.useAudioFallback = false;
+        this.$refs.video.src = URL.createObjectURL(f);
         this.videoName = f.name;
+        // Try to generate waveform client-side
+        this.loadWaveformFromFile(f);
       },
       async loadTranscriptLocal(e) {
         const f = e.target.files?.[0];
         if (!f) return;
         await this.applyTranscript(JSON.parse(await f.text()));
-      },
-      async loadSelectionsLocal(e) {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        this.applySelections(JSON.parse(await f.text()));
       },
 
       // ============ VIDEO PICKER (server mode) ============
@@ -944,17 +867,17 @@
           const resp = await api('/api/pick-video', { method: 'POST' });
           if (resp.cancelled) return;
           if (resp.video_path) {
-            // Reset everything that depended on the previous video
             this.segments = [];
             this.speakers = [];
             this.hasSuggestions = false;
             this.suggestionStats = { cut: 0, hi: 0 };
             this.activeId = null;
+            this.waveformData = null;
+            this.useAudioFallback = false;
             this.videoPath = resp.video_path;
             this.videoName = resp.video_name;
-            // Bust browser video cache by adding a timestamp
+            this._detectAudio(resp.video_name);
             this.$refs.video.src = '/api/video?t=' + Date.now();
-            // If a transcript sits next to the new video, auto-load
             if (resp.has_transcript) {
               await this.loadTranscriptFromUrl('/api/transcript?t=' + Date.now());
             }
@@ -966,7 +889,7 @@
         }
       },
 
-      // ============ SERVER transcript loader ============
+      // ============ TRANSCRIPT ============
       async loadTranscriptFromUrl(url) {
         const data = await api(url);
         await this.applyTranscript(data);
@@ -988,16 +911,284 @@
           sourceIsAI: false,
         }));
         this.speakers = Array.from(new Set(this.segments.map(s => s.speaker))).sort();
-        // Initialize speaker weights
         this.speakers.forEach(sp => { if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0; });
         this.tryRestore();
-        // Auto-run AI suggestions (only if server mode + toggle is on + no existing user tags)
         const hasUserTags = this.segments.some(s => s.tags.length > 0);
         if (this.serverMode && this.aiAutoMode && !hasUserTags) {
           this.runSuggestSilent();
         }
+        // Load waveform
+        if (this.serverMode) {
+          this.loadWaveform();
+        }
       },
 
+      // ============ WAVEFORM ============
+      async loadWaveform() {
+        if (!this.serverMode || this.waveLoading) return;
+        this.waveLoading = true;
+        try {
+          this.waveformData = await api('/api/waveform');
+          this.$nextTick(() => this.drawWaveform());
+        } catch (e) {
+          console.warn('waveform load failed:', e.message);
+        } finally {
+          this.waveLoading = false;
+        }
+      },
+
+      async loadWaveformFromFile(file) {
+        // Client-side waveform for local (file://) mode
+        this.waveLoading = true;
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+          const channelData = audioBuffer.getChannelData(0);
+          const pps = 20;
+          const samplesPerPeak = Math.floor(audioBuffer.sampleRate / pps);
+          const peaks = [];
+          for (let i = 0; i < channelData.length; i += samplesPerPeak) {
+            let min = 0, max = 0;
+            const end = Math.min(i + samplesPerPeak, channelData.length);
+            for (let j = i; j < end; j++) {
+              if (channelData[j] < min) min = channelData[j];
+              if (channelData[j] > max) max = channelData[j];
+            }
+            peaks.push([Math.round(min * 10000) / 10000, Math.round(max * 10000) / 10000]);
+          }
+          this.waveformData = { peaks, peaks_per_second: pps, duration: audioBuffer.duration };
+          this.$nextTick(() => this.drawWaveform());
+        } catch (e) {
+          console.warn('client-side waveform failed:', e.message);
+        } finally {
+          this.waveLoading = false;
+        }
+      },
+
+      drawWaveform() {
+        const canvas = this.$refs.waveCanvas;
+        const container = this.$refs.waveScroll;
+        if (!canvas || !container || !this.waveformData || !this.segments.length) return;
+
+        const { peaks, peaks_per_second } = this.waveformData;
+        if (!peaks.length) return;
+
+        const totalWidth = this.waveWidth;
+        const dpr = window.devicePixelRatio || 1;
+        const h = 152;
+
+        canvas.style.width = totalWidth + 'px';
+        canvas.style.height = h + 'px';
+        canvas.width = totalWidth * dpr;
+        canvas.height = h * dpr;
+
+        const ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // Regions
+        const rulerH = 22;
+        const speakerBarH = 16;
+        const waveH = h - rulerH - speakerBarH - 2;
+        const midY = rulerH + waveH / 2;
+        const ampScale = waveH / 2 * 0.92;
+
+        // Background
+        ctx.fillStyle = '#0d0d14';
+        ctx.fillRect(0, 0, totalWidth, h);
+
+        // === TIME RULER ===
+        ctx.fillStyle = '#13131a';
+        ctx.fillRect(0, 0, totalWidth, rulerH);
+
+        const pxPerSecond = totalWidth / this.duration;
+        // Choose nice tick interval
+        const niceIntervals = [1, 2, 5, 10, 15, 30, 60, 120, 300, 600];
+        let tickInterval = niceIntervals.find(n => n * pxPerSecond >= 50) || 600;
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '9px ui-monospace, monospace';
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 0.5;
+
+        for (let t = 0; t <= this.duration; t += tickInterval) {
+          const x = (t / this.duration) * totalWidth;
+          ctx.beginPath();
+          ctx.moveTo(x, rulerH - 5);
+          ctx.lineTo(x, rulerH);
+          ctx.stroke();
+          ctx.fillText(this.fmtTs(t), x, rulerH - 7);
+        }
+        // Sub-ticks
+        const subTick = tickInterval / 4;
+        if (subTick * pxPerSecond >= 8) {
+          ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+          for (let t = 0; t <= this.duration; t += subTick) {
+            const x = (t / this.duration) * totalWidth;
+            ctx.beginPath();
+            ctx.moveTo(x, rulerH - 3);
+            ctx.lineTo(x, rulerH);
+            ctx.stroke();
+          }
+        }
+        // Ruler bottom line
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, rulerH);
+        ctx.lineTo(totalWidth, rulerH);
+        ctx.stroke();
+
+        // === SEGMENT BACKGROUNDS ===
+        for (const seg of this.segments) {
+          const x1 = (seg.start / this.duration) * totalWidth;
+          const x2 = (seg.end / this.duration) * totalWidth;
+          if (seg.tags.includes('cut')) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.07)';
+            ctx.fillRect(x1, rulerH, x2 - x1, waveH);
+          } else if (seg.tags.includes('highlight')) {
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+            ctx.fillRect(x1, rulerH, x2 - x1, waveH);
+          }
+        }
+
+        // === WAVEFORM PEAKS ===
+        // Build segment lookup for peak coloring
+        const totalPeaks = peaks.length;
+        const pxPerPeak = totalWidth / totalPeaks;
+
+        for (let i = 0; i < totalPeaks; i++) {
+          const [pMin, pMax] = peaks[i];
+          const x = i * pxPerPeak;
+          const t = i / peaks_per_second;
+
+          // Find segment at this time
+          let seg = null;
+          for (const s of this.segments) {
+            if (t >= s.start && t < s.end) { seg = s; break; }
+          }
+
+          if (seg?.tags.includes('cut')) {
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+          } else if (seg?.tags.includes('highlight')) {
+            ctx.fillStyle = '#d97706';
+          } else {
+            ctx.fillStyle = '#7c3aed';
+          }
+
+          const y1 = midY - pMax * ampScale;
+          const y2 = midY - pMin * ampScale;
+          const barW = Math.max(1, pxPerPeak * 0.85);
+          ctx.fillRect(x, y1, barW, Math.max(1, y2 - y1));
+        }
+
+        // Zero line
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, midY);
+        ctx.lineTo(totalWidth, midY);
+        ctx.stroke();
+
+        // === SEGMENT BOUNDARIES ===
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 0.5;
+        for (const seg of this.segments) {
+          const x = (seg.start / this.duration) * totalWidth;
+          ctx.beginPath();
+          ctx.moveTo(x, rulerH);
+          ctx.lineTo(x, rulerH + waveH);
+          ctx.stroke();
+        }
+
+        // === SPEAKER COLOR BAR ===
+        const barY = rulerH + waveH + 2;
+        for (const seg of this.segments) {
+          const x1 = (seg.start / this.duration) * totalWidth;
+          const x2 = (seg.end / this.duration) * totalWidth;
+          ctx.fillStyle = this.speakerColor(seg.speaker);
+          ctx.globalAlpha = seg.tags.includes('cut') ? 0.25 : 0.6;
+          ctx.fillRect(x1, barY, Math.max(1, x2 - x1), speakerBarH);
+        }
+        ctx.globalAlpha = 1;
+
+        // === ACTIVE SEGMENT HIGHLIGHT ===
+        if (this.activeSeg) {
+          const x1 = (this.activeSeg.start / this.duration) * totalWidth;
+          const x2 = (this.activeSeg.end / this.duration) * totalWidth;
+          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x1 + 0.5, rulerH + 0.5, x2 - x1 - 1, waveH + speakerBarH + 1);
+        }
+      },
+
+      onWaveClick(e) {
+        const container = this.$refs.waveScroll;
+        if (!container || !this.duration) return;
+        const rect = container.getBoundingClientRect();
+        const x = e.clientX - rect.left + container.scrollLeft;
+        const totalWidth = this.waveWidth;
+        const t = (x / totalWidth) * this.duration;
+        this.seekTo(t);
+      },
+
+      onWaveWheel(e) {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const delta = e.deltaY < 0 ? 1 : -1;
+          // Zoom toward mouse position
+          const container = this.$refs.waveScroll;
+          const rect = container.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const scrollBefore = container.scrollLeft;
+          const oldWidth = this.waveWidth;
+          const ratio = (scrollBefore + mouseX) / oldWidth;
+
+          const oldZoom = this.waveZoom;
+          const step = this.waveZoom < 5 ? 0.5 : 1;
+          this.waveZoom = Math.max(1, Math.min(30, this.waveZoom + delta * step));
+
+          if (this.waveZoom !== oldZoom) {
+            this.$nextTick(() => {
+              this.drawWaveform();
+              const newWidth = this.waveWidth;
+              container.scrollLeft = ratio * newWidth - mouseX;
+            });
+          }
+        }
+        // else: let browser handle normal scroll (horizontal)
+      },
+
+      zoomWave(delta) {
+        const container = this.$refs.waveScroll;
+        const oldZoom = this.waveZoom;
+        const step = this.waveZoom < 5 ? 0.5 : 1;
+        this.waveZoom = Math.max(1, Math.min(30, this.waveZoom + delta * step));
+        if (this.waveZoom !== oldZoom && container) {
+          // Keep center stable
+          const center = container.scrollLeft + container.clientWidth / 2;
+          const ratio = center / (this.waveContainerW * oldZoom);
+          this.$nextTick(() => {
+            this.drawWaveform();
+            container.scrollLeft = ratio * this.waveWidth - container.clientWidth / 2;
+          });
+        }
+      },
+
+      keepPlayheadVisible() {
+        if (this.waveZoom <= 1) return;
+        const container = this.$refs.waveScroll;
+        if (!container || !this.duration) return;
+        const px = (this.currentTime / this.duration) * this.waveWidth;
+        const viewLeft = container.scrollLeft;
+        const viewRight = viewLeft + container.clientWidth;
+        if (px < viewLeft + 60 || px > viewRight - 60) {
+          container.scrollLeft = px - container.clientWidth / 3;
+        }
+      },
+
+      // ============ SUGGESTIONS ============
       async runSuggestSilent() {
         try {
           const payload = {
@@ -1018,11 +1209,9 @@
             return s;
           });
           this.hasSuggestions = true;
-          this.suggestionStats = {
-            cut: resp.meta.suggested_cuts,
-            hi: resp.meta.suggested_highlights,
-          };
+          this.suggestionStats = { cut: resp.meta.suggested_cuts, hi: resp.meta.suggested_highlights };
           this.persist();
+          this.$nextTick(() => this.drawWaveform());
         } catch (e) {
           console.warn('auto suggest failed:', e.message);
         }
@@ -1031,11 +1220,8 @@
       async toggleAutoSuggest() {
         if (!this.segments.length) return;
         this.aiAutoMode = !this.aiAutoMode;
-        if (this.aiAutoMode) {
-          await this.runSuggestSilent();
-        } else {
-          this.clearSuggestions();
-        }
+        if (this.aiAutoMode) await this.runSuggestSilent();
+        else this.clearSuggestions();
       },
 
       applySelections(data) {
@@ -1043,53 +1229,18 @@
         this.segments = this.segments.map(s => ({ ...s, tags: [...(byId.get(s.id) || [])] }));
         if (data.speaker_names) this.speakerNames = data.speaker_names;
         this.persist();
+        this.$nextTick(() => this.drawWaveform());
       },
 
-      // ============ TRANSCRIBE ============
-      openTranscribeModal() {
-        if (!this.serverMode) {
-          alert('请先用 start.sh 启动服务器模式');
-          return;
-        }
-        this.showTranscribeModal = true;
-      },
-      async startTranscribe() {
-        this.showTranscribeModal = false;
-        try {
-          const payload = {
-            type: 'transcribe',
-            params: {
-              num_speakers: this.transcribeOpts.numSpeakers || undefined,
-              language: this.transcribeOpts.language,
-              model: this.transcribeOpts.model,
-            }
-          };
-          const { job_id } = await api('/api/jobs', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-          });
-          this.pollJob(job_id, async (j) => {
-            if (j.status === 'done') {
-              const state = await api('/api/state');
-              if (state.has_transcript) await this.loadTranscriptFromUrl(state.transcript_url);
-            }
-          });
-        } catch (e) {
-          alert('启动转录失败: ' + e.message);
-        }
-      },
-
-      // ============ SUGGEST ============
       openSuggestionModal() {
         if (!this.segments.length) { alert('先加载转录稿'); return; }
         if (!this.serverMode) { alert('智能建议需要服务器模式'); return; }
-        // Ensure all speakers have weights
         this.speakers.forEach(sp => {
           if (!(sp in this.suggestOpts.speakerWeights)) this.suggestOpts.speakerWeights[sp] = 1.0;
         });
         this.showSuggestModal = true;
       },
+
       async runSuggest() {
         this.suggestBusy = true;
         try {
@@ -1104,7 +1255,6 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
           });
-          // Apply: overwrite tags with suggestions, mark sourceIsAI
           const sugMap = new Map(resp.suggestions.map(s => [s.id, s.tags]));
           this.segments = this.segments.map(s => {
             const tags = sugMap.get(s.id);
@@ -1112,23 +1262,23 @@
             return { ...s, tags: [], sourceIsAI: false };
           });
           this.hasSuggestions = true;
-          this.suggestionStats = {
-            cut: resp.meta.suggested_cuts,
-            hi: resp.meta.suggested_highlights,
-          };
+          this.suggestionStats = { cut: resp.meta.suggested_cuts, hi: resp.meta.suggested_highlights };
           this.showSuggestModal = false;
           this.persist();
+          this.$nextTick(() => this.drawWaveform());
         } catch (e) {
           alert('生成建议失败: ' + e.message);
         } finally {
           this.suggestBusy = false;
         }
       },
+
       clearSuggestions() {
         this.segments = this.segments.map(s => ({ ...s, tags: [], sourceIsAI: false }));
         this.hasSuggestions = false;
         this.suggestionStats = { cut: 0, hi: 0 };
         this.persist();
+        this.$nextTick(() => this.drawWaveform());
       },
 
       // ============ TAGGING ============
@@ -1136,62 +1286,68 @@
         const i = seg.tags.indexOf(tag);
         if (i >= 0) seg.tags.splice(i, 1);
         else seg.tags.push(tag);
-        // Once user toggles manually, the segment is no longer "just AI" — promote to confirmed
         seg.sourceIsAI = false;
         this.persist();
+        this.$nextTick(() => this.drawWaveform());
       },
-      clearTags(seg) { seg.tags.splice(0, seg.tags.length); seg.sourceIsAI = false; this.persist(); },
+      clearTags(seg) {
+        seg.tags.splice(0, seg.tags.length);
+        seg.sourceIsAI = false;
+        this.persist();
+        this.$nextTick(() => this.drawWaveform());
+      },
 
       // ============ VIDEO ============
       seekTo(t) {
-        if (!this.$refs.video.src) return;
-        try { this.$refs.video.currentTime = Math.max(0, t); } catch (_) {}
+        const el = this.mediaEl;
+        if (!el || !el.src) return;
+        try { el.currentTime = Math.max(0, t); } catch (_) {}
       },
-      seekToSegment(s) { this.seekTo(s.start); this.activeId = s.id; this.scrollIntoView(s.id); },
-      seekByBar(e) {
-        const r = e.currentTarget.getBoundingClientRect();
-        const ratio = (e.clientX - r.left) / r.width;
-        this.seekTo(ratio * this.duration);
+      seekToSegment(s) {
+        this.seekTo(s.start);
+        this.activeId = s.id;
+        this.scrollIntoView(s.id);
+        this.$nextTick(() => this.drawWaveform());
       },
 
       onTimeUpdate() {
-        const v = this.$refs.video;
+        const v = this.mediaEl || this.$refs.video;
         const t = v.currentTime;
         this.currentTime = t;
         this.playing = !v.paused;
 
-        // Preview mode: if inside a 'cut' segment, jump to next non-cut
         if (this.previewMode) {
           const here = this.segments.find(s => t >= s.start && t < s.end);
           if (here && here.tags.includes('cut')) {
-            // find next non-cut segment
             const next = this.segments.find(s => s.start >= here.end && !s.tags.includes('cut'));
-            if (next) {
-              this.seekTo(next.start);
-              return;
-            } else {
-              v.pause();
-              return;
-            }
+            if (next) { this.seekTo(next.start); return; }
+            else { v.pause(); return; }
           }
         }
 
-        // Update active segment
+        let needRedraw = false;
         for (const s of this.segments) {
           if (t >= s.start && t < s.end) {
             if (this.activeId !== s.id) {
               this.activeId = s.id;
               this.scrollIntoView(s.id);
+              needRedraw = true;
             }
-            return;
+            break;
           }
         }
+
+        if (this.playing) this.keepPlayheadVisible();
+        if (needRedraw) this.$nextTick(() => this.drawWaveform());
       },
+
       onVideoLoaded() {
-        const d = this.$refs.video.duration;
+        const el = this.mediaEl || this.$refs.video;
+        const d = el.duration;
         if (d && (!this.duration || Math.abs(this.duration - d) > 2)) this.duration = d;
       },
-      togglePlay() { const v = this.$refs.video; if (!v.src) return; if (v.paused) v.play(); else v.pause(); },
+
+      togglePlay() { const v = this.mediaEl; if (!v || !v.src) return; if (v.paused) v.play(); else v.pause(); },
       jumpBy(d) { this.seekTo(this.currentTime + d); },
 
       scrollIntoView(id) {
@@ -1223,6 +1379,10 @@
           if (s) this.seekTo(s.start);
           return;
         }
+        // Zoom shortcuts
+        if (e.key === '=' || e.key === '+') { this.zoomWave(1); e.preventDefault(); return; }
+        if (e.key === '-') { this.zoomWave(-1); e.preventDefault(); return; }
+
         const seg = this.segments.find(s => s.id === this.activeId);
         if (!seg) return;
         if (k === 'x') this.toggle(seg, 'cut');
@@ -1325,15 +1485,44 @@
         } catch (_) {}
       },
 
-      // ============ EXPORT ============
-      async onExport() {
-        if (this.serverMode) {
-          await this.exportVideo();
-        } else {
-          this.exportSelectionsJson();
+      // ============ TRANSCRIBE ============
+      openTranscribeModal() {
+        if (!this.serverMode) { alert('请先用 start.sh 启动服务器模式'); return; }
+        this.showTranscribeModal = true;
+      },
+      async startTranscribe() {
+        this.showTranscribeModal = false;
+        try {
+          const payload = {
+            type: 'transcribe',
+            params: {
+              backend: this.transcribeOpts.backend,
+              num_speakers: this.transcribeOpts.numSpeakers || undefined,
+              language: this.transcribeOpts.language,
+              model: this.transcribeOpts.model,
+            }
+          };
+          const { job_id } = await api('/api/jobs', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          this.pollJob(job_id, async (j) => {
+            if (j.status === 'done') {
+              const state = await api('/api/state');
+              if (state.has_transcript) await this.loadTranscriptFromUrl(state.transcript_url);
+            }
+          });
+        } catch (e) {
+          alert('启动转录失败: ' + e.message);
         }
       },
 
+      // ============ EXPORT ============
+      async onExport() {
+        if (this.serverMode) await this.exportVideo();
+        else this.exportSelectionsJson();
+      },
       exportSelectionsJson() {
         if (!this.segments.length) return;
         const out = this.buildSelectionsPayload();
@@ -1345,7 +1534,6 @@
         document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
       },
-
       async exportVideo() {
         const selections = this.buildSelectionsPayload();
         try {
@@ -1356,10 +1544,9 @@
           });
           this.pollJob(job_id, (j) => {
             if (j.status === 'done' && j.result?.download_url) {
-              // Trigger browser download
               const a = document.createElement('a');
               a.href = j.result.download_url;
-              a.download = ''; // server sends Content-Disposition
+              a.download = '';
               document.body.appendChild(a); a.click(); a.remove();
             }
           });
@@ -1367,7 +1554,6 @@
           alert('导出失败: ' + e.message);
         }
       },
-
       buildSelectionsPayload() {
         return {
           video_path: this.videoPath || this.videoName || '',
@@ -1389,12 +1575,9 @@
             if (j.status === 'done' || j.status === 'error') {
               if (onDone) await onDone(j);
               this._pollTimer = null;
-              // keep modal open for a moment so user sees "done" state
               return;
             }
-          } catch (e) {
-            // network hiccup — keep trying
-          }
+          } catch (e) { /* keep trying */ }
           this._pollTimer = setTimeout(loop, 1000);
         };
         loop();

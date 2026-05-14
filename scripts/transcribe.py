@@ -16,11 +16,24 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 from pathlib import Path
+
+
+DEFAULT_ZH_PROMPT = (
+    "以下是中文播客访谈转写，主题可能涉及婚恋、相亲市场、结婚、生育、"
+    "亲密关系、家庭、女性成长、职场和个人经历。请使用简体中文，"
+    "保留口语表达，不要翻译成英文，不要把常见中文词识别成同音错词。"
+)
+
+DEFAULT_ZH_HOTWORDS = (
+    "婚恋 相亲市场 结婚 生育 亲密关系 家庭 女性 成长 竞争力 护工 "
+    "传统 路线 感情模式 价值 年龄 焦虑 本地 虚岁 选择"
+)
 
 
 def load_env(env_path: Path) -> None:
@@ -35,16 +48,53 @@ def load_env(env_path: Path) -> None:
         os.environ.setdefault(key.strip(), val.strip())
 
 
-def ensure_ffmpeg() -> None:
-    if subprocess.run(["which", "ffmpeg"], capture_output=True).returncode != 0:
+def _homebrew_ffmpeg7_bin() -> Path | None:
+    if sys.platform != "darwin":
+        return None
+    try:
+        prefix = subprocess.check_output(
+            ["brew", "--prefix", "ffmpeg@7"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=3,
+        ).strip()
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        return None
+    bin_dir = Path(prefix) / "bin"
+    if (bin_dir / "ffmpeg").exists() and (bin_dir / "ffprobe").exists():
+        return bin_dir
+    return None
+
+
+def resolve_ffmpeg_tools(ffmpeg_bin: Path | None = None) -> dict[str, str]:
+    """Find ffmpeg/ffprobe, preferring Homebrew ffmpeg@7 on macOS."""
+    candidates = [ffmpeg_bin, _homebrew_ffmpeg7_bin()]
+    for bin_dir in candidates:
+        if not bin_dir:
+            continue
+        ffmpeg = Path(bin_dir) / "ffmpeg"
+        ffprobe = Path(bin_dir) / "ffprobe"
+        if ffmpeg.exists() and ffprobe.exists():
+            return {"ffmpeg": str(ffmpeg), "ffprobe": str(ffprobe)}
+
+    ffmpeg = shutil.which("ffmpeg")
+    ffprobe = shutil.which("ffprobe")
+    return {"ffmpeg": ffmpeg or "ffmpeg", "ffprobe": ffprobe or "ffprobe"}
+
+
+def ensure_ffmpeg(tools: dict[str, str]) -> None:
+    if subprocess.run([tools["ffmpeg"], "-version"], capture_output=True).returncode != 0:
         print("✗ ffmpeg not on PATH. Run setup.sh first.", file=sys.stderr)
+        sys.exit(1)
+    if subprocess.run([tools["ffprobe"], "-version"], capture_output=True).returncode != 0:
+        print("✗ ffprobe not on PATH. Run setup.sh first.", file=sys.stderr)
         sys.exit(1)
 
 
-def extract_audio(video: Path, out_wav: Path) -> None:
+def extract_audio(video: Path, out_wav: Path, tools: dict[str, str]) -> None:
     """Extract 16kHz mono wav — the format WhisperX and pyannote both prefer."""
     cmd = [
-        "ffmpeg", "-y", "-loglevel", "error",
+        tools["ffmpeg"], "-y", "-loglevel", "error",
         "-i", str(video),
         "-ac", "1", "-ar", "16000",
         "-c:a", "pcm_s16le",
@@ -53,9 +103,9 @@ def extract_audio(video: Path, out_wav: Path) -> None:
     subprocess.run(cmd, check=True)
 
 
-def probe_duration(path: Path) -> float:
+def probe_duration(path: Path, tools: dict[str, str]) -> float:
     out = subprocess.check_output([
-        "ffprobe", "-v", "error",
+        tools["ffprobe"], "-v", "error",
         "-show_entries", "format=duration",
         "-of", "default=noprint_wrappers=1:nokey=1",
         str(path),
@@ -67,6 +117,95 @@ def fmt_duration(seconds: float) -> str:
     h, rem = divmod(int(seconds), 3600)
     m, s = divmod(rem, 60)
     return f"{h:d}:{m:02d}:{s:02d}"
+
+
+def build_asr_options(
+    *,
+    language: str,
+    batch_size: int,
+    prompt: str | None,
+    hotwords: str | None,
+    chunk_size: int,
+) -> dict:
+    """Build WhisperX ASR/VAD options in one auditable place."""
+    forced_language = None if language == "auto" else language
+    use_zh_context = forced_language in ("zh", "zh-cn", "zh-hans")
+
+    initial_prompt = prompt
+    effective_hotwords = hotwords
+    if use_zh_context:
+        initial_prompt = initial_prompt or DEFAULT_ZH_PROMPT
+        effective_hotwords = effective_hotwords or DEFAULT_ZH_HOTWORDS
+
+    return {
+        "language": forced_language,
+        "batch_size": batch_size,
+        "asr_options": {
+            "temperatures": [0.0],
+            "condition_on_previous_text": True,
+            "initial_prompt": initial_prompt,
+            "hotwords": effective_hotwords,
+        },
+        "vad_options": {
+            "chunk_size": chunk_size,
+            "vad_onset": 0.500,
+            "vad_offset": 0.363,
+        },
+    }
+
+
+def build_asr_metadata(
+    *,
+    requested_model: str,
+    effective_model: str,
+    language: str,
+    compute_type: str,
+    asr_options: dict,
+) -> dict:
+    return {
+        "requested_model": requested_model,
+        "effective_model": effective_model,
+        "language": language,
+        "compute_type": compute_type,
+        "batch_size": asr_options.get("batch_size"),
+        "vad_options": asr_options.get("vad_options", {}),
+        "used_initial_prompt": bool(asr_options.get("initial_prompt")),
+        "used_hotwords": bool(asr_options.get("hotwords")),
+    }
+
+
+def _can_merge(prev: dict, seg: dict, *, max_gap: float, max_duration: float) -> bool:
+    if prev.get("speaker") != seg.get("speaker"):
+        return False
+    if float(seg["start"]) - float(prev["end"]) > max_gap:
+        return False
+    return float(seg["end"]) - float(prev["start"]) <= max_duration
+
+
+def merge_adjacent_segments(
+    segments: list[dict],
+    *,
+    max_gap: float = 0.45,
+    max_duration: float = 18.0,
+) -> list[dict]:
+    """Merge same-speaker micro-segments so downstream AI sees complete turns."""
+    merged: list[dict] = []
+    for seg in sorted(segments, key=lambda s: float(s["start"])):
+        item = dict(seg)
+        item["start"] = round(float(item["start"]), 3)
+        item["end"] = round(float(item["end"]), 3)
+        item["text"] = (item.get("text") or "").strip()
+        if not merged or not _can_merge(merged[-1], item, max_gap=max_gap, max_duration=max_duration):
+            merged.append(item)
+            continue
+
+        prev = merged[-1]
+        prev["end"] = item["end"]
+        if item["text"]:
+            prev["text"] = f"{prev.get('text', '').strip()} {item['text']}".strip()
+    for i, seg in enumerate(merged):
+        seg["id"] = i
+    return merged
 
 
 def run(argv: list[str] | None = None) -> int:
@@ -83,6 +222,16 @@ def run(argv: list[str] | None = None) -> int:
     ap.add_argument("--output", type=Path, default=None,
                     help="Output JSON path. Defaults to <video>.transcript.json")
     ap.add_argument("--batch-size", type=int, default=8)
+    ap.add_argument("--chunk-size", type=int, default=30,
+                    help="WhisperX VAD chunk size in seconds. Larger chunks preserve context for ASR.")
+    ap.add_argument("--prompt", default=None,
+                    help="Optional ASR initial prompt. Defaults to a Chinese podcast prompt when --language zh.")
+    ap.add_argument("--hotwords", default=None,
+                    help="Optional ASR hotwords. Defaults to Chinese podcast domain words when --language zh.")
+    ap.add_argument("--merge-gap", type=float, default=0.45,
+                    help="Merge adjacent same-speaker segments separated by at most this many seconds.")
+    ap.add_argument("--max-merged-duration", type=float, default=18.0,
+                    help="Maximum duration for merged transcript segments.")
     args = ap.parse_args(argv)
 
     video = args.video.resolve()
@@ -98,12 +247,14 @@ def run(argv: list[str] | None = None) -> int:
         print("✗ HF_TOKEN not set. Run setup.sh or add HF_TOKEN to .env.", file=sys.stderr)
         return 1
 
-    ensure_ffmpeg()
+    ffmpeg_tools = resolve_ffmpeg_tools()
+    ensure_ffmpeg(ffmpeg_tools)
 
     output_path = args.output or video.with_suffix("").with_name(video.stem + ".transcript.json")
     print(f"▶ Video:     {video}")
-    print(f"▶ Duration:  {fmt_duration(probe_duration(video))}")
+    print(f"▶ Duration:  {fmt_duration(probe_duration(video, ffmpeg_tools))}")
     print(f"▶ Model:     {args.model} · language={args.language}")
+    print(f"▶ ffmpeg:    {ffmpeg_tools['ffmpeg']}")
     if args.num_speakers:
         print(f"▶ Speakers:  {args.num_speakers} (fixed)")
     print(f"▶ Output:    {output_path}")
@@ -116,6 +267,7 @@ def run(argv: list[str] | None = None) -> int:
 
     # If we've already pre-downloaded the model (e.g. via ModelScope), use the local
     # directory directly and skip the huggingface_hub fetch entirely.
+    requested_model = args.model
     local_model = Path.home() / ".cache" / "huggingface" / "hub" / f"models--Systran--faster-whisper-{args.model}" / "snapshots" / "manual"
     if local_model.exists() and (local_model / "model.bin").exists():
         print(f"   → using local model at {local_model}")
@@ -125,12 +277,19 @@ def run(argv: list[str] | None = None) -> int:
     transcribe_device = "cpu"
     compute_type = "int8"
     diarize_device = "mps" if torch.backends.mps.is_available() else "cpu"
+    options = build_asr_options(
+        language=args.language,
+        batch_size=args.batch_size,
+        prompt=args.prompt,
+        hotwords=args.hotwords,
+        chunk_size=args.chunk_size,
+    )
 
     t0 = time.time()
     with tempfile.TemporaryDirectory() as tmpd:
         tmp_wav = Path(tmpd) / "audio.wav"
         print("⏳ Extracting audio (16kHz mono)…")
-        extract_audio(video, tmp_wav)
+        extract_audio(video, tmp_wav, ffmpeg_tools)
 
         # --- 1. Whisper transcription ----------------------------------------
         print(f"⏳ Transcribing with whisper-{args.model} on {transcribe_device}… (this is the slow part)")
@@ -138,13 +297,15 @@ def run(argv: list[str] | None = None) -> int:
             args.model,
             device=transcribe_device,
             compute_type=compute_type,
-            language=None if args.language == "auto" else args.language,
+            language=options["language"],
+            asr_options=options["asr_options"],
+            vad_options=options["vad_options"],
         )
         audio = whisperx.load_audio(str(tmp_wav))
         asr_result = asr_model.transcribe(
             audio,
-            batch_size=args.batch_size,
-            language=None if args.language == "auto" else args.language,
+            batch_size=options["batch_size"],
+            language=options["language"],
         )
         detected_lang = asr_result.get("language", args.language)
         print(f"   → detected language: {detected_lang}, {len(asr_result['segments'])} raw segments")
@@ -221,15 +382,38 @@ def run(argv: list[str] | None = None) -> int:
             "speaker": seg.get("speaker", "UNKNOWN"),
             "text": (seg.get("text") or "").strip(),
         })
+    raw_segment_count = len(out_segments)
+    out_segments = merge_adjacent_segments(
+        out_segments,
+        max_gap=args.merge_gap,
+        max_duration=args.max_merged_duration,
+    )
 
     speakers_seen = sorted({s["speaker"] for s in out_segments})
     payload = {
         "video_path": str(video),
-        "duration": probe_duration(video),
+        "duration": probe_duration(video, ffmpeg_tools),
         "language": detected_lang,
         "num_speakers": len(speakers_seen),
         "speakers": speakers_seen,
         "model": args.model,
+        "asr": build_asr_metadata(
+            requested_model=requested_model,
+            effective_model=args.model,
+            language=detected_lang,
+            compute_type=compute_type,
+            asr_options={
+                "batch_size": options["batch_size"],
+                "vad_options": options["vad_options"],
+                **options["asr_options"],
+            },
+        ),
+        "raw_segment_count": raw_segment_count,
+        "merge": {
+            "enabled": True,
+            "gap": args.merge_gap,
+            "max_duration": args.max_merged_duration,
+        },
         "segments": out_segments,
     }
 
@@ -238,7 +422,8 @@ def run(argv: list[str] | None = None) -> int:
     elapsed = time.time() - t0
     print()
     print(f"✅ Done in {fmt_duration(elapsed)}")
-    print(f"   {len(out_segments)} segments, {len(speakers_seen)} speakers: {', '.join(speakers_seen)}")
+    print(f"   {raw_segment_count} raw segments → {len(out_segments)} merged segments")
+    print(f"   {len(speakers_seen)} speakers: {', '.join(speakers_seen)}")
     print(f"   Saved to {output_path}")
     print()
     print("Next:  open ~/.claude/skills/podcast-cutter/editor/index.html")
