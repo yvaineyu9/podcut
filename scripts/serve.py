@@ -331,26 +331,20 @@ def run_analyze(job: Job) -> None:
         lines.append(f"[{sid}] [{start:.1f}-{end:.1f}] [{speaker}] {text}")
     transcript_text = "\n".join(lines)
 
-    prompt = f"""你是一个播客剪辑助手。以下是一期播客的转录稿，共{len(segments)}段。
+    # Load editing guidelines from skill file
+    skill_path = SKILL_DIR / ".claude" / "skills" / "podcast-edit" / "SKILL.md"
+    if skill_path.exists():
+        skill_content = skill_path.read_text()
+    else:
+        skill_content = "你是播客剪辑助手。标记 cut（删除废话）和 highlight（金句）。"
 
-请分析每一段内容，为每段决定标签：
-- "cut" — 删除：假启动、纯废话（嗯/啊/对对对）、调设备、重复表达、跑题太远、过长卡壳
-- "highlight" — 金句：有洞察的总结、引人共鸣的体悟、可做短视频的句子、讨论高潮
-- 不标注 — 保留：有信息增量的观点、故事案例、话题过渡、不同视角的回应
+    prompt = f"""{skill_content}
 
-注意事项：
-- 保持话题完整性，不要从话题中间切断
-- 如果金句需要前面铺垫才能理解，铺垫也保留
-- 多人讨论中保留必要的短回应让对话自然
-- 转录可能有错字，根据上下文理解
+---
 
-转录稿：
-{transcript_text}
+以下是一期播客的转录稿，共{len(segments)}段。请按上述标准分析每段并返回 JSON。
 
-请只返回一个 JSON 数组，格式如下，只包含需要标记 cut 或 highlight 的段落（不标注的段不用列出）：
-[{{"id": 0, "tags": ["cut"]}}, {{"id": 5, "tags": ["highlight"]}}, ...]
-
-只返回 JSON，不要其他文字。"""
+{transcript_text}"""
 
     # Find claude CLI
     import shutil as _shutil

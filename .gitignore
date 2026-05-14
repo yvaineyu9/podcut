@@ -22,10 +22,9 @@ Thumbs.db
 .idea/
 *.swp
 
-# Claude Code skill metadata — only used when this lives under ~/.claude/skills/.
-# Keep it out of the public repo so the project reads as a standalone tool.
-AGENTS.md
-SKILL.md
+# Claude Code skill metadata (root level only)
+/AGENTS.md
+/SKILL.md
 
 
 # Demo data — used during local development as a Claude Code skill,
